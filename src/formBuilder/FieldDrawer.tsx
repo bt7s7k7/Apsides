@@ -264,7 +264,7 @@ export const ObjectFieldDrawer = defineComponent({
             <div data-field={key} class={["gap-1", props.path.length > 0 && "pl-2"]} key={"field1:" + key} style={grid().columns(options.labelWidth == "auto" ? "auto" : options.labelWidth + "px", "1fr").colspan(2).$}>
                 {props.field.properties.map(property => {
                     const { field, bind, label } = property
-                    const fieldPath = path.add(bind.getKey())
+                    const fieldPath = props.path.add(bind.getKey())
                     const fieldKey = fieldPath.join(".")
 
                     return (

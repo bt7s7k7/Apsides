@@ -56,7 +56,7 @@ export function useForm<T>(options: ValueFormOptions<T>) {
             return (
                 <div>
                     <FieldGroup options={fieldOptions}>
-                        <FieldDrawer field={form.root} binding={binding} base={value} label="" path={new ImmutableList()} />
+                        <FieldDrawer field={form.root} binding={binding} base={value} label="" path={new ImmutableList("value")} />
                     </FieldGroup>
                 </div>
             )
