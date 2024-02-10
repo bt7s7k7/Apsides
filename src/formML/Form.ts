@@ -1,4 +1,4 @@
-import { Predicate, convertCase, isClassCtor } from "../comTypes/util"
+import { Predicate, convertCase } from "../comTypes/util"
 import { Struct } from "../struct/Struct"
 import { Type } from "../struct/Type"
 import { Binding_t, ObjectPropertyBinding } from "./Binding"
@@ -22,9 +22,7 @@ export namespace Form {
     export function getField(type: Type<any>): FormField | null {
         const fieldAttr = Type.getMetadata(type)?.get(CustomFieldAttribute)
         if (fieldAttr) {
-            const field = fieldAttr.getField(type)
-            if (isClassCtor(field)) return new field()
-            return field
+            return fieldAttr.getField(type)
         }
 
         if (type.name == Type.string.name) return new TextField()
@@ -61,7 +59,16 @@ export class PropertyInfo extends Struct.define("PropertyInfo", {
 export class TextField extends Struct.define("TextField", {}, FormField) { }
 FormField_t.register(TextField)
 
-export class NumberField extends Struct.define("NumberField", {}, FormField) { }
+export class NumberField extends Struct.define("NumberField", {
+    integer: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
+    min: Type.number.as(Type.nullable, { skipNullSerialize: true }),
+    max: Type.number.as(Type.nullable, { skipNullSerialize: true })
+}, FormField) {
+    public static readonly INTEGER = new NumberField({ integer: true })
+    public static readonly POSITIVE_INTEGER = new NumberField({ integer: true, min: 0 })
+    public static readonly ONE_INTEGER = new NumberField({ integer: true, min: 1 })
+    public static readonly POSITIVE = new NumberField({ min: 0 })
+}
 FormField_t.register(NumberField)
 
 export class CheckField extends Struct.define("CheckField", {}, FormField) { }
@@ -77,13 +84,12 @@ export class ObjectField extends Struct.define("ObjectField", {
 }, FormField) { }
 
 export class CustomFieldAttribute<T extends Type<any> = Type<any>> {
-    public getField(type: Type<any>) {
-        if (isClassCtor(this._field)) {
-            return this._field as FormField
+    public getField(type: Type<any>): FormField {
+        if (typeof this._field == "function") {
+            return this._field(type as T)
         } else {
-            return (this._field as (type: T) => FormField)(type as T)
+            return this._field
         }
-
     }
 
     constructor(

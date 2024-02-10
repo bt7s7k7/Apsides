@@ -1,4 +1,4 @@
-import { InjectionKey, PropType, computed, defineComponent, h, inject, markRaw, provide, reactive } from "vue"
+import { InjectionKey, PropType, Ref, computed, defineComponent, h, inject, markRaw, provide, reactive, ref } from "vue"
 import { ImmutableList } from "../comTypes/ImmutableList"
 import { unreachable } from "../comTypes/util"
 import { Binding } from "../formML/Binding"
@@ -58,7 +58,7 @@ export class FieldChangeEvent {
     public getMutation() {
         const path = this.getPath().slice(0, -1)
         const key = this.getPath().at(-1) ?? unreachable()
-        return new Mutation.AssignMutation({ type: "mut_assign", key, path, value: this.value })
+        return new Mutation.AssignMutation({ type: "mut_assign", key, path, value: this.value }).setLocal()
     }
 
     public isPath(test: Mutation.TypedPath) {
@@ -80,10 +80,10 @@ export class FieldChangeEvent {
     ) { }
 }
 
-export function useFieldDrawerValue(props: Omit<_FieldProps<FormField>, "field">) {
+export function useFieldDrawerValue<T = any>(props: Omit<_FieldProps<FormField>, "field">) {
     const value = computed({
-        get: () => props.binding.getValue(props.base),
-        set: (value) => props.binding.setValue(props.base, value)
+        get: () => props.binding.getValue(props.base) as T,
+        set: (value: T) => props.binding.setValue(props.base, value)
     })
 
     const options = useFieldOptions()
@@ -187,11 +187,55 @@ export const NumberFieldDrawer = defineComponent({
         ...getFieldDrawerProps(NumberField)
     },
     setup(props, ctx) {
-        const value = useFieldDrawerValue(props)
-        const numberValue = numberModel(value)
+        const field = props.field
+
+        let value: { value: any }
+        let numberValue: Ref<string>
+        let changed: () => void
+        const error = ref("")
+
+        if (field.min == null && field.max == null) {
+            const fieldValue = useFieldDrawerValue(props)
+            value = fieldValue
+            changed = fieldValue.changed
+            numberValue = numberModel(value, { integer: !!field.integer })
+        } else {
+            const fieldValue = useFieldDrawerValue(props)
+            value = fieldValue
+
+            const validator = (newValue: number) => {
+                if (field.min != null && newValue < field.min) {
+                    return "Value too small"
+                }
+
+                if (field.max != null && newValue < field.max) {
+                    return "Value too large"
+                }
+
+                return null
+            }
+
+            changed = () => {
+                if (validator(value.value) == null) {
+                    fieldValue.changed()
+                }
+            }
+
+            const watchedValue = computed({
+                get() {
+                    return value.value
+                },
+                set(newValue) {
+                    value.value = newValue
+                    error.value = validator(newValue) || ""
+                }
+            })
+
+            numberValue = numberModel(watchedValue, { integer: !!field.integer })
+        }
 
         return () => (
-            <TextField class="flex-fill border rounded" vModel={numberValue.value} onChange={value.changed} clear />
+            <TextField error={error.value} type={field.integer ? "number" : undefined} class="flex-fill border rounded" vModel={numberValue.value} onChange={changed} clear />
         )
     },
 })
@@ -261,7 +305,7 @@ export const ObjectFieldDrawer = defineComponent({
             {props.label != "" && <>
                 <div data-field-label={key} class="flex row" key={"label0:" + key} style={grid().colspan(2).$}>{options.prefix?.(props)}{props.label}</div>
             </>}
-            <div data-field={key} class={["gap-1", props.path.length > 0 && "pl-2"]} key={"field1:" + key} style={grid().columns(options.labelWidth == "auto" ? "auto" : options.labelWidth + "px", "1fr").colspan(2).$}>
+            <div data-field={key} class={["gap-1", props.label.length > 0 && "pl-2"]} key={"field1:" + key} style={grid().columns(options.labelWidth == "auto" ? "auto" : options.labelWidth + "px", "1fr").colspan(2).$}>
                 {props.field.properties.map(property => {
                     const { field, bind, label } = property
                     const fieldPath = props.path.add(bind.getKey())

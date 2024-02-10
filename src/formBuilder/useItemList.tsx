@@ -1,11 +1,12 @@
 import { mdiClose } from "@mdi/js"
-import { Ref, computed, ref, shallowReactive } from "vue"
+import { Ref, computed, defineComponent, ref, shallowReactive } from "vue"
 import { fuzzySearch } from "../comTypes/util"
 import { Button, ButtonGroup, ButtonProps } from "../vue3gui/Button"
+import { MenuTarget, ModalOptions, useDynamicsEmitter } from "../vue3gui/DynamicsEmitter"
 import { MenuItem, MenuItemProps } from "../vue3gui/MenuItem"
 import { TextField } from "../vue3gui/TextField"
 import { useDebounce } from "../vue3gui/util"
-import { FormDefinition } from "./FormView"
+import { FormDefinition, FormView } from "./FormView"
 
 type _ItemAction<T> = Omit<ButtonProps.Function & MenuItemProps.Function, "onClick" | "onMouseDown"> & {
     onClick?(value: T, index: number, array: T[], event: MouseEvent): void
@@ -141,7 +142,7 @@ export function useItemList<T>(options: ItemListOptions<T>) {
                 <div>
                     <div class="flex column absolute-fill overflow-auto">
                         {(options.searchBar || options.globalActions) && (
-                            <div class="border-bottom flex row" key="_bar">
+                            <div class="border-bottom flex row sticky" key="_bar">
                                 {options.searchBar && (
                                     <TextField focus={options.focusSearchBar} vModel={searchQuery.value} placeholder="Search..." class="flex-fill" clear>
                                         <Button
@@ -204,4 +205,44 @@ export function useItemList<T>(options: ItemListOptions<T>) {
         selected: null
     })
     return list
+}
+
+export interface SearchPopupOptions<T> {
+    list: ItemListOptions<T>,
+    formClassOverride?: any
+    modalOptions?: ModalOptions
+}
+export function useSearchPopup<T>(options: SearchPopupOptions<T>) {
+    const emitter = useDynamicsEmitter()
+
+    return {
+        open(target: MenuTarget) {
+            const menu = emitter.menu(target, defineComponent({
+                name: "SearchPopup",
+                setup(props, ctx) {
+                    const list = useItemList({
+                        searchBar: true,
+                        focusSearchBar: true,
+                        ...options.list,
+                        onClick(...args) {
+                            menu.controller.close()
+                            options.list.onClick?.(...args)
+                        }
+                    })
+
+                    return () => (
+                        <FormView class={options.formClassOverride ?? "w-200 h-300"} form={list} />
+                    )
+                },
+            }), {
+                props: {
+                    backdropCancels: true,
+                    noTransition: true,
+                    class: "bg-white rounded border",
+                    noDefaultStyle: true,
+                    ...options.modalOptions
+                }
+            })
+        }
+    }
 }
