@@ -10,7 +10,7 @@ import { FormDefinition } from "./FormView"
 export interface ValueFormOptions<T> {
     /** Value to be edited in the form, if it is not an object, see `valueLabel` */
     value: Ref<T> | T
-    /** Type of the value, if not specified it will be derived using `Struct.getType` */
+    /** Type of the value for generating a form. Ignored if `form` property specified. If not specified it will be derived using `Struct.getType` */
     type?: Type<T>
     /** Form to display, if not specified, it will be generated from the type */
     form?: Form
@@ -21,6 +21,8 @@ export interface ValueFormOptions<T> {
      * @default "Value"
      * */
     valueLabel?: string
+    /** Binding to use with the value, if not specified it will be the value itself */
+    binding?: Binding
 }
 
 export interface ValueForm<T> extends FormDefinition {
@@ -30,7 +32,7 @@ export interface ValueForm<T> extends FormDefinition {
 export function useForm<T>(options: ValueFormOptions<T>) {
     const value = isRef(options.value) ? options.value : ref(options.value)
     let form = options.form ?? Form.getForm(options.type ?? Struct.getType(value.value as any))
-    let binding: Binding = new ObjectPropertyBinding({ property: "value" })
+    let binding = options.binding ?? new ObjectPropertyBinding({ property: "value" })
 
     if (options.valueLabel != null || !(form.root instanceof ObjectField)) {
         const oldRoot = form.root
