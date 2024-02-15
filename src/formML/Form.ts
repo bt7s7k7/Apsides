@@ -83,6 +83,11 @@ export class ObjectField extends Struct.define("ObjectField", {
     properties: PropertyInfo.ref().as(Type.array)
 }, FormField) { }
 
+export class InfoField extends Struct.define("InfoField", {
+    text: Type.string,
+    decoration: Type.enum("border", "info", "warning", "error").as(Type.optional)
+}) { }
+
 export class CustomFieldAttribute<T extends Type<any> = Type<any>> {
     public getField(type: Type<any>): FormField {
         if (typeof this._field == "function") {

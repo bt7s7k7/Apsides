@@ -1,8 +1,9 @@
+import { mdiAlert, mdiInformationBox } from "@mdi/js"
 import { InjectionKey, PropType, Ref, computed, defineComponent, h, inject, markRaw, provide, reactive, ref } from "vue"
 import { ImmutableList } from "../comTypes/ImmutableList"
 import { unreachable } from "../comTypes/util"
 import { Binding } from "../formML/Binding"
-import { CheckField, Form, FormField, NumberField, ObjectField, SelectField, TextField as TextField_1 } from "../formML/Form"
+import { CheckField, Form, FormField, InfoField, NumberField, ObjectField, SelectField, TextField as TextField_1 } from "../formML/Form"
 import { Mutation } from "../struct/Mutation"
 import { Struct } from "../struct/Struct"
 import { ButtonGroup } from "../vue3gui/Button"
@@ -320,3 +321,50 @@ export const ObjectFieldDrawer = defineComponent({
     }
 })
 registerFieldDrawer(ObjectField, ObjectFieldDrawer)
+
+export const InfoFieldDrawer = defineComponent({
+    name: "InfoFieldDrawer",
+    props: {
+        ...getFieldDrawerProps(InfoField)
+    },
+    noFieldDecoration: true,
+    setup(props, ctx) {
+        const styles: Record<InfoField["decoration"], string> = {
+            border: "border",
+            error: "border border-danger",
+            info: "border border-primary",
+            warning: "border border-warning"
+        }
+
+        const colors: Record<InfoField["decoration"], string> = {
+            border: "default",
+            error: "danger",
+            info: "primary",
+            warning: "warning"
+        }
+
+        const icons: Record<InfoField["decoration"], string | null> = {
+            border: null,
+            error: mdiAlert,
+            info: mdiInformationBox,
+            warning: mdiAlert
+        }
+
+        const path = props.path.add(props.binding.getKey())
+        const key = path.join(".")
+
+        return () => (
+            <div data-field={key} class={["gap-1", props.label.length > 0 && "pl-2"]} key={"field1:" + key} style={grid().colspan(2).$}>
+                {props.field.decoration == null ? (
+                    <div>{props.field.text}</div>
+                ) : (
+                    <div class={["flex row gap-2 p-2 rounded", styles[props.field.decoration]]}>
+                        {icons[props.field.decoration] != null && <Icon scale={1.25} class={`pt-1 text-${colors[props.field.decoration]}`} icon={icons[props.field.decoration]!} />}
+                        {props.field.text}
+                    </div>
+                )}
+            </div>
+        )
+    }
+})
+registerFieldDrawer(InfoField, InfoFieldDrawer)
