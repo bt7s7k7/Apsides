@@ -159,10 +159,17 @@ export const FieldDrawer = (defineComponent({
                 return base
             }
 
-            return () => <>
-                <div data-field-label={key} key={"label:" + key} class="flex row">{options.prefix?.(props)}{props.label}</div>
-                <div data-field={key} key={"field:" + key} class="flex row">{base()}{options.prefix?.(props)}</div>
-            </>
+            if (typeof options.labelWidth != "number" || options.labelWidth > 0) {
+                return () => <>
+                    <div data-field-label={key} key={"label:" + key} class="flex row">{options.prefix?.(props)}{props.label}</div>
+                    <div data-field={key} key={"field:" + key} class="flex row">{base()}{options.prefix?.(props)}</div>
+                </>
+            } else {
+                return () => <>
+                    <div></div>
+                    <div data-field={key} key={"field:" + key} class="flex row">{base()}{options.prefix?.(props)}</div>
+                </>
+            }
         }
     }
 }))
