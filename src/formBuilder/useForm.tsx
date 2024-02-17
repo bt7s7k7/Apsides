@@ -1,6 +1,6 @@
 import { Ref, isRef, reactive, ref } from "vue"
 import { ImmutableList } from "../comTypes/ImmutableList"
-import { Binding, ObjectPropertyBinding, RootBinding } from "../formML/Binding"
+import { Binding, DeepObjectPropertyBinding, ObjectPropertyBinding, RootBinding } from "../formML/Binding"
 import { Form, ObjectField, PropertyInfo } from "../formML/Form"
 import { Struct } from "../struct/Struct"
 import { Type } from "../struct/Type"
@@ -22,7 +22,7 @@ export interface ValueFormOptions<T> {
      * */
     valueLabel?: string
     /** Binding to use with the value, if not specified it will be the value itself */
-    binding?: Binding
+    path?: string[]
 }
 
 export interface ValueForm<T> extends FormDefinition {
@@ -32,7 +32,7 @@ export interface ValueForm<T> extends FormDefinition {
 export function useForm<T>(options: ValueFormOptions<T>) {
     const value = isRef(options.value) ? options.value : ref(options.value)
     let form = options.form ?? Form.getForm(options.type ?? Struct.getType(value.value as any))
-    let binding = options.binding ?? new ObjectPropertyBinding({ property: "value" })
+    let binding: Binding = options.path == null ? new ObjectPropertyBinding({ property: "value" }) : new DeepObjectPropertyBinding({ path: ["value", ...options.path] })
 
     if (options.valueLabel != null || !(form.root instanceof ObjectField)) {
         const oldRoot = form.root
