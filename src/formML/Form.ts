@@ -25,7 +25,7 @@ export namespace Form {
             return fieldAttr.getField(type)
         }
 
-        if (type.name == Type.string.name) return new TextField()
+        if (type.name == Type.string.name) return new StringField()
         if (type.name == Type.number.name) return new NumberField()
         if (type.name == Type.boolean.name) return new CheckField()
 
@@ -56,8 +56,8 @@ export class PropertyInfo extends Struct.define("PropertyInfo", {
     field: FormField_t.base
 }) { }
 
-export class TextField extends Struct.define("TextField", {}, FormField) { }
-FormField_t.register(TextField)
+export class StringField extends Struct.define("TextField", {}, FormField) { }
+FormField_t.register(StringField)
 
 export class NumberField extends Struct.define("NumberField", {
     integer: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),

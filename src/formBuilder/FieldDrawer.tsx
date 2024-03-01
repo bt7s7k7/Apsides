@@ -3,7 +3,7 @@ import { InjectionKey, PropType, Ref, computed, defineComponent, h, inject, mark
 import { ImmutableList } from "../comTypes/ImmutableList"
 import { unreachable } from "../comTypes/util"
 import { Binding } from "../formML/Binding"
-import { CheckField, Form, FormField, InfoField, NumberField, ObjectField, SelectField, TextField as TextField_1 } from "../formML/Form"
+import { CheckField, Form, FormField, InfoField, NumberField, ObjectField, SelectField, StringField } from "../formML/Form"
 import { Mutation } from "../struct/Mutation"
 import { Struct } from "../struct/Struct"
 import { ButtonGroup } from "../vue3gui/Button"
@@ -174,10 +174,10 @@ export const FieldDrawer = (defineComponent({
     }
 }))
 
-export const TextFieldDrawer = defineComponent({
-    name: "TextFieldDrawer",
+export const StringFieldDrawer = defineComponent({
+    name: "StringFieldDrawer",
     props: {
-        ...getFieldDrawerProps(TextField_1)
+        ...getFieldDrawerProps(StringField)
     },
     setup(props, ctx) {
         const value = useFieldDrawerValue(props)
@@ -187,7 +187,7 @@ export const TextFieldDrawer = defineComponent({
         )
     },
 })
-registerFieldDrawer(TextField_1, TextFieldDrawer)
+registerFieldDrawer(StringField, StringFieldDrawer)
 
 export const NumberFieldDrawer = defineComponent({
     name: "NumberFieldDrawer",
@@ -216,7 +216,7 @@ export const NumberFieldDrawer = defineComponent({
                     return "Value too small"
                 }
 
-                if (field.max != null && newValue < field.max) {
+                if (field.max != null && newValue > field.max) {
                     return "Value too large"
                 }
 
