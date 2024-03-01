@@ -1,0 +1,13 @@
+ul {
+    margin: 0;
+
+    &>li::marker {
+        content: "-   ";
+    }
+}
+
+code {
+    border: 1px solid var(--border-color);
+    padding: calc(var(--size-int) / 2);
+    border-radius: var(--default-border-radius);
+}
