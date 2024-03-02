@@ -82,11 +82,13 @@ FormField_t.register(SelectField)
 export class ObjectField extends Struct.define("ObjectField", {
     properties: PropertyInfo.ref().as(Type.array)
 }, FormField) { }
+FormField_t.register(ObjectField)
 
 export class InfoField extends Struct.define("InfoField", {
     text: Type.string,
     decoration: Type.enum("border", "info", "warning", "error").as(Type.optional)
 }) { }
+FormField_t.register(InfoField)
 
 export class CustomFieldAttribute<T extends Type<any> = Type<any>> {
     public getField(type: Type<any>): FormField {
