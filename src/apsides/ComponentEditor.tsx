@@ -202,7 +202,7 @@ export const ComponentEditor = (defineComponent({
 
         return () => <>
             <EditorView
-                class={["border rounded", props.large ? "h-500" : "h-300"]}
+                class={["border rounded overflow-hidden", props.large ? "h-500" : "h-300"]}
                 code={props.code} mode="jsx"
                 noAST noLoad
                 onCompile={compile}
