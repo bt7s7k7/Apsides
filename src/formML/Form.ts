@@ -1,7 +1,7 @@
 import { Predicate, convertCase } from "../comTypes/util"
 import { Struct } from "../struct/Struct"
 import { Type } from "../struct/Type"
-import { Binding_t, ObjectPropertyBinding } from "./Binding"
+import { Binding_t, ObjectPropertyBinding, RootBinding } from "./Binding"
 
 export abstract class FormField { }
 export const FormField_t = new Struct.PolymorphicSerializer<FormField>("FormField")
@@ -9,6 +9,19 @@ export const FormField_t = new Struct.PolymorphicSerializer<FormField>("FormFiel
 export class Form extends Struct.define("Form", {
     root: FormField_t.base
 }) { }
+
+function _getProperties(type: Type.ObjectType) {
+    return type.propList.map(([key, type]) => {
+        const field = Form.getField(type)
+        if (field == null) return null
+
+        return new PropertyInfo({
+            field,
+            label: Type.getMetadata(type)?.get(LabelAttribute)?.label ?? convertCase(key, "camel", "title"),
+            bind: new ObjectPropertyBinding({ property: key })
+        })
+    }).filter(Predicate.notNull())
+}
 
 export namespace Form {
     export function getForm(type: Type<any>) {
@@ -20,7 +33,8 @@ export namespace Form {
     }
 
     export function getField(type: Type<any>): FormField | null {
-        const fieldAttr = Type.getMetadata(type)?.get(CustomFieldAttribute)
+        const metadata = Type.getMetadata(type)
+        const fieldAttr = metadata?.get(CustomFieldAttribute)
         if (fieldAttr) {
             return fieldAttr.getField(type)
         }
@@ -33,18 +47,34 @@ export namespace Form {
             options: type.entries.filter(Predicate.typeOf("string"))
         })
 
-        if (Type.isObject(type)) return new ObjectField({
-            properties: type.propList.map(([key, type]) => {
-                const field = getField(type)
-                if (field == null) return null
+        if (Type.isObject(type)) {
+            const properties = _getProperties(type)
+            return new ObjectField({ properties })
+        }
 
-                return new PropertyInfo({
-                    field,
-                    label: Type.getMetadata(type)?.get(LabelAttribute)?.label ?? convertCase(key, "camel", "title"),
-                    bind: new ObjectPropertyBinding({ property: key })
-                })
-            }).filter(Predicate.notNull())
-        })
+        const tableAttr = metadata?.get(TableAttribute)
+        if ((Type.isArray(type) || Type.isMap(type) || Type.isRecord(type)) && tableAttr) {
+            const elementType = type.type
+            const showIndex = tableAttr.showIndex
+
+            let properties: PropertyInfo[]
+            if (Type.isObject(elementType)) {
+                properties = _getProperties(elementType)
+            } else {
+                const elementField = getField(elementType)
+                if (elementField == null) return null
+
+                properties = [
+                    new PropertyInfo({
+                        bind: new RootBinding(),
+                        field: elementField,
+                        label: "Value"
+                    })
+                ]
+            }
+
+            return new TableField({ properties, showIndex })
+        }
 
         return null
     }
@@ -84,6 +114,12 @@ export class ObjectField extends Struct.define("ObjectField", {
 }, FormField) { }
 FormField_t.register(ObjectField)
 
+export class TableField extends Struct.define("TableField", {
+    showIndex: Type.boolean,
+    properties: PropertyInfo.ref().as(Type.array)
+}, FormField) { }
+FormField_t.register(TableField)
+
 export class InfoField extends Struct.define("InfoField", {
     text: Type.string,
     decoration: Type.enum("border", "info", "warning", "error").as(Type.optional)
@@ -102,6 +138,16 @@ export class CustomFieldAttribute<T extends Type<any> = Type<any>> {
     constructor(
         protected readonly _field: FormField | ((type: T) => FormField)
     ) { }
+}
+
+export class TableAttribute {
+    public readonly showIndex
+
+    constructor(
+        options?: { showIndex?: boolean }
+    ) {
+        this.showIndex = options?.showIndex ?? false
+    }
 }
 
 export class LabelAttribute {

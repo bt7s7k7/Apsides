@@ -1,9 +1,10 @@
 import { mdiAlert, mdiInformationBox } from "@mdi/js"
 import { InjectionKey, PropType, Ref, computed, defineComponent, h, inject, markRaw, provide, reactive, ref } from "vue"
 import { ImmutableList } from "../comTypes/ImmutableList"
-import { unreachable } from "../comTypes/util"
+import { Optional } from "../comTypes/Optional"
+import { range, unreachable } from "../comTypes/util"
 import { Binding } from "../formML/Binding"
-import { CheckField, Form, FormField, InfoField, NumberField, ObjectField, SelectField, StringField } from "../formML/Form"
+import { CheckField, Form, FormField, InfoField, NumberField, ObjectField, SelectField, StringField, TableField } from "../formML/Form"
 import { Mutation } from "../struct/Mutation"
 import { Struct } from "../struct/Struct"
 import { ButtonGroup } from "../vue3gui/Button"
@@ -132,7 +133,7 @@ export const FieldDrawer = (defineComponent({
     },
     setup(props, ctx) {
         const field = _FIELD_DRAWERS.get(props.field.constructor as any)
-        const path = props.path.add(props.binding.getKey())
+        const path = props.path
         const key = path.join(".")
         const options = useFieldOptions()
 
@@ -159,15 +160,15 @@ export const FieldDrawer = (defineComponent({
                 return base
             }
 
-            if (typeof options.labelWidth != "number" || options.labelWidth > 0) {
+            if (props.label != "" && (typeof options.labelWidth != "number" || options.labelWidth > 0)) {
                 return () => <>
                     <div data-field-label={key} key={"label:" + key} class="flex row">{options.prefix?.(props)}{props.label}</div>
-                    <div data-field={key} key={"field:" + key} class="flex row">{base()}{options.prefix?.(props)}</div>
+                    <div data-field={key} key={"field:" + key} class="flex row">{base()}{options.suffix?.(props)}</div>
                 </>
             } else {
                 return () => <>
                     <div></div>
-                    <div data-field={key} key={"field:" + key} class="flex row">{base()}{options.prefix?.(props)}</div>
+                    <div data-field={key} key={"field:" + key} class="flex row">{options.prefix?.(props)}{base()}{options.suffix?.(props)}</div>
                 </>
             }
         }
@@ -305,7 +306,7 @@ export const ObjectFieldDrawer = defineComponent({
             set: (value) => props.binding.setValue(props.base, value)
         })
 
-        const path = props.path.add(props.binding.getKey())
+        const path = props.path
         const key = path.join(".")
         const options = useFieldOptions()
 
@@ -328,6 +329,88 @@ export const ObjectFieldDrawer = defineComponent({
     }
 })
 registerFieldDrawer(ObjectField, ObjectFieldDrawer)
+
+export const TableFieldDrawer = defineComponent({
+    name: "TableFieldDrawer",
+    props: {
+        ...getFieldDrawerProps(TableField)
+    },
+    noFieldDecoration: true,
+    setup(props, ctx) {
+        const value = useFieldDrawerValue(props)
+        const path = props.path
+        const key = path.join(".")
+        const options = useFieldOptions()
+
+        function getElements() {
+            if (value.value instanceof Array) return value.value
+            if (value.value instanceof Map) return [...value.value.values()]
+            if (typeof value.value == "object" && value.value != null) return Object.values(value.value)
+            return []
+        }
+
+        function getKeys() {
+            if (value.value instanceof Array) return [...range(value.value.length, v => v.toString())]
+            if (value.value instanceof Map) return [...value.value.keys()]
+            if (typeof value.value == "object" && value.value != null) return Object.keys(value.value)
+            return []
+        }
+
+        function renderTable() {
+            const elements = getElements()
+            const keys = getKeys()
+            const properties = props.field.properties
+
+            return elements.map((elem, i) => {
+                const key = keys[i]
+                const basePath = path.add(key)
+                const baseKey = path.join(".")
+                const suffixProps: _FieldProps<FormField> = {
+                    ...props,
+                    path: basePath
+                }
+
+                return (
+                    <tr data-field-table-row={baseKey}>
+                        {keys != null && <td>{keys[i]}</td>}
+                        {properties.map(prop => {
+                            const { field, bind } = prop
+                            const fieldPath = basePath.add(bind.getKey())
+                            const fieldKey = fieldPath.join(".")
+
+                            return <td>
+                                <FieldDrawer field={field} base={elem} binding={bind} label={""} path={fieldPath} key={fieldKey} />
+                            </td>
+                        })}
+                        {Optional.value(options.suffix).notNull().do(v => v(suffixProps)).notNull().tryUnwrap()}
+                    </tr>
+                )
+            })
+        }
+
+        return () => <>
+            {props.label != "" && <>
+                <div data-field-label={key} class="flex row" key={"label0:" + key} style={grid().colspan(2).$}>{options.prefix?.(props)}{props.label}</div>
+            </>}
+            <table class="as-table w-fill" data-field={key} style={grid().colspan(2).$}>
+                <thead>
+                    <tr>
+                        {props.field.showIndex && (
+                            <td></td>
+                        )}
+                        {props.field.properties.map(prop => (
+                            <td>{prop.label}</td>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {renderTable()}
+                </tbody>
+            </table>
+        </>
+    },
+})
+registerFieldDrawer(TableField, TableFieldDrawer)
 
 export const InfoFieldDrawer = defineComponent({
     name: "InfoFieldDrawer",
@@ -357,7 +440,7 @@ export const InfoFieldDrawer = defineComponent({
             warning: mdiAlert
         }
 
-        const path = props.path.add(props.binding.getKey())
+        const path = props.path
         const key = path.join(".")
 
         return () => (
