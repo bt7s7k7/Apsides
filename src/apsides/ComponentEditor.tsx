@@ -1,5 +1,6 @@
+import { mdiDelete, mdiPlus } from "@mdi/js"
 import "codemirror/mode/jsx/jsx.js"
-import { computed, defineComponent, h, ref, shallowRef, watch } from "vue"
+import { computed, defineComponent, h, reactive, ref, shallowRef, watch } from "vue"
 import { GenericParser } from "../comTypes/GenericParser"
 import { escapeHTML, isUpperCase, isWhitespace, isWord, runString, unreachable } from "../comTypes/util"
 import { EditorView } from "../editor/EditorView"
@@ -7,7 +8,8 @@ import { EditorState } from "../editor/useEditorState"
 import * as api from "../index"
 
 const _ENV: any = {
-    defineComponent, shallowRef, ref, watch, computed, h,
+    computed, defineComponent, h, reactive, ref, shallowRef, watch,
+    mdiDelete, mdiPlus
 }
 Object.assign<any, any>(_ENV, api)
 
@@ -207,6 +209,7 @@ export const ComponentEditor = (defineComponent({
                 noAST noLoad
                 onCompile={compile}
                 customOutput={customOutput}
+                config={{ lineWrapping: false }}
             />
         </>
     }

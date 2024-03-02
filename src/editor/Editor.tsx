@@ -1,4 +1,4 @@
-import { EditorFromTextArea, TextMarker, fromTextArea } from "codemirror"
+import { EditorConfiguration, EditorFromTextArea, KeyMap, TextMarker, fromTextArea } from "codemirror"
 import "codemirror/addon/mode/simple.js"
 import "codemirror/lib/codemirror.css"
 import { PropType, defineComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
@@ -9,7 +9,8 @@ export const Editor = (defineComponent({
     props: {
         content: { type: String, default: "" },
         highlight: { type: Object as PropType<EditorHighlightOptions | null> },
-        mode: { type: String }
+        mode: { type: String },
+        config: { type: Object as PropType<EditorConfiguration> }
     },
     emits: {
         change: (value: string) => true
@@ -28,11 +29,13 @@ export const Editor = (defineComponent({
             editor = fromTextArea(textarea.value!, {
                 lineNumbers: true,
                 mode: props.mode ?? "simple",
+                lineWrapping: true,
+                indentUnit: 4,
+                ...props.config,
                 extraKeys: {
+                    ...(props.config?.extraKeys as KeyMap | undefined),
                     "Ctrl-S": () => ctx.emit("change", value)
                 },
-                lineWrapping: true,
-                indentUnit: 4
             })
 
             editor.setValue(props.content)

@@ -8,6 +8,7 @@ import { Tab, TabbedContainer, Tabs, useTabs } from "../vue3gui/Tabs"
 import { useResizeWatcher } from "../vue3gui/util"
 import { Editor, EditorHighlightOptions } from "./Editor"
 import { EditorState, useEditorState } from "./useEditorState"
+import { EditorConfiguration } from "codemirror"
 
 export const EditorView = eventDecorator(defineComponent({
     name: "EditorView",
@@ -19,7 +20,8 @@ export const EditorView = eventDecorator(defineComponent({
         localStorageId: { type: String },
         noLoad: { type: Boolean },
         noAST: { type: Boolean },
-        customOutput: { type: null as unknown as PropType<() => any> }
+        customOutput: { type: null as unknown as PropType<() => any> },
+        config: { type: Object as PropType<EditorConfiguration> }
     },
     emits: {
         compile: (state: EditorState, code: string) => true
@@ -140,6 +142,7 @@ export const EditorView = eventDecorator(defineComponent({
                             class="absolute-fill"
                             highlight={highlighting.value}
                             mode={props.mode}
+                            config={props.config}
                         />
                     </div>
                     <div class="flex-fill flex column" ref={outputPanel}>

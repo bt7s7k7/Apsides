@@ -32,6 +32,10 @@ export const FormPage = (defineComponent({
                     Forms also support sub-objects.
                 </p>
                 <ComponentEditor name="form_nested" code={snippets.nested} />
+                <p>
+                    For displaying many objects at once a table can be used.
+                </p>
+                <ComponentEditor name="form_table" code={snippets.table} />
                 <div class="h-500"></div>
             </div>
         )
