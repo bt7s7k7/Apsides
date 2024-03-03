@@ -366,6 +366,7 @@ export const TableFieldDrawer = defineComponent({
         function renderTable() {
             const elements = getElements()
             const keys = getKeys()
+            const showIndex = props.field.showIndex
             const properties = props.field.properties
 
             return elements.map((elem, i) => {
@@ -379,7 +380,7 @@ export const TableFieldDrawer = defineComponent({
 
                 return (
                     <tr data-field-table-row={baseKey}>
-                        {keys != null && <td>{keys[i]}</td>}
+                        {showIndex && <td>{keys[i]}</td>}
                         {properties.map(prop => {
                             const { field, bind } = prop
                             const fieldPath = basePath.add(bind.getKey())
