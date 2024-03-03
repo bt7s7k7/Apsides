@@ -86,13 +86,16 @@ export class PropertyInfo extends Struct.define("PropertyInfo", {
     field: FormField_t.base
 }) { }
 
-export class StringField extends Struct.define("TextField", {}, FormField) { }
+export class StringField extends Struct.define("TextField", {
+    explicit: Type.boolean.as(Type.nullable)
+}, FormField) { }
 FormField_t.register(StringField)
 
 export class NumberField extends Struct.define("NumberField", {
     integer: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
     min: Type.number.as(Type.nullable, { skipNullSerialize: true }),
-    max: Type.number.as(Type.nullable, { skipNullSerialize: true })
+    max: Type.number.as(Type.nullable, { skipNullSerialize: true }),
+    explicit: Type.boolean.as(Type.nullable)
 }, FormField) {
     public static readonly INTEGER = new NumberField({ integer: true })
     public static readonly POSITIVE_INTEGER = new NumberField({ integer: true, min: 0 })

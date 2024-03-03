@@ -184,7 +184,10 @@ export const StringFieldDrawer = defineComponent({
         const value = useFieldDrawerValue(props)
 
         return () => (
-            <TextField class="flex-fill border rounded" vModel={value.value} onChange={value.changed} clear />
+            <TextField
+                class="flex-fill border rounded" vModel={value.value} onChange={value.changed} clear
+                explicit={props.field.explicit ?? undefined}
+            />
         )
     },
 })
@@ -244,7 +247,11 @@ export const NumberFieldDrawer = defineComponent({
         }
 
         return () => (
-            <TextField error={error.value} type={field.integer ? "number" : undefined} class="flex-fill border rounded" vModel={numberValue.value} onChange={changed} clear />
+            <TextField
+                error={error.value} type={field.integer ? "number" : undefined} class="flex-fill border rounded"
+                vModel={numberValue.value} onChange={changed} clear
+                explicit={props.field.explicit ?? undefined}
+            />
         )
     },
 })
