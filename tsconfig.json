@@ -24,6 +24,7 @@
         "src/**/*.d.ts",
         "src/**/*.tsx",
         "src/**/*.vue",
-        "src/apsides/formSnippets.jsx"
+        "src/apsides/formSnippets.jsx",
+        "src/apsides/componentsSnippets.jsx"
     ]
 }

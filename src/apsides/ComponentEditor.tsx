@@ -1,4 +1,4 @@
-import { mdiDelete, mdiPlus } from "@mdi/js"
+import { mdiCircleOutline, mdiCog, mdiDelete, mdiFileOutline, mdiPlus } from "@mdi/js"
 import "codemirror/mode/jsx/jsx.js"
 import { computed, defineComponent, h, reactive, ref, shallowRef, watch } from "vue"
 import { GenericParser } from "../comTypes/GenericParser"
@@ -9,7 +9,7 @@ import * as api from "../index"
 
 const _ENV: any = {
     computed, defineComponent, h, reactive, ref, shallowRef, watch,
-    mdiDelete, mdiPlus
+    mdiDelete, mdiPlus, mdiCog, mdiFileOutline, mdiCircleOutline
 }
 Object.assign<any, any>(_ENV, api)
 
@@ -28,7 +28,7 @@ function _transpileJSX(source: string) {
             if (term != "" && parser.consume(term)) break
 
             if (parser.at(0) == "<") {
-                if (isWord(parser.at(1))) {
+                if (isWord(parser.at(1)) || parser.at(1) == ">") {
                     if (!parser.consume("<")) unreachable()
                     result += parseTag()
                 } else {
@@ -56,6 +56,7 @@ function _transpileJSX(source: string) {
 
         const properties: { name: string, value: string }[] = []
         const name = parser.readWhile(isWord)
+        const isFragment = name == ""
         const isComponent = isUpperCase(name, 0)
         const children: string[] = []
 
@@ -63,27 +64,31 @@ function _transpileJSX(source: string) {
             parser.skipWhile(isWhitespace)
 
             if (parser.matches(">") || parser.matches("/>")) {
-                result += `h(`
+                if (!isFragment) {
+                    result += `h(`
 
-                if (isComponent) {
-                    result += name
+                    if (isComponent) {
+                        result += name
+                    } else {
+                        result += JSON.stringify(name)
+                    }
+
+                    result += ", {"
+                    result += properties.map(({ name, value }) => (
+                        name == "" ? (
+                            `...(${value})`
+                        ) : (
+                            `${name}: ${value}`
+                        )
+                    )).join(", ")
+                    result += "}"
+
+                    if (parser.consume("/>")) {
+                        result += ")"
+                        return result
+                    }
                 } else {
-                    result += JSON.stringify(name)
-                }
-
-                result += ", {"
-                result += properties.map(({ name, value }) => (
-                    name == "" ? (
-                        `...(${value})`
-                    ) : (
-                        `${name}: ${value}`
-                    )
-                )).join(", ")
-                result += "}"
-
-                if (parser.consume("/>")) {
-                    result += ")"
-                    return result
+                    result += "["
                 }
 
                 if (!parser.consume(">")) unreachable()
@@ -92,23 +97,30 @@ function _transpileJSX(source: string) {
             }
 
             if (isWord(parser.at(0))) {
-                const name = parser.readWhile(isWord)
+                const propertyName = parser.readWhile(isWord)
 
                 if (!parser.consume("=")) {
-                    properties.push({ name, value: "true" })
+                    properties.push({ name: propertyName, value: "true" })
                     continue
                 }
 
                 if (parser.consume("\"")) {
                     const literal = parser.readUntil((v, i) => v[i] == "\"" && v[i - 1] != "\\")
-                    properties.push({ name, value: `"${literal}"` })
+                    properties.push({ name: propertyName, value: `"${literal}"` })
                     if (!parser.consume("\"")) unreachable()
                     continue
                 }
 
                 if (parser.consume("{")) {
                     const expr = parseExpression("}")
-                    properties.push({ name, value: expr })
+
+                    if (propertyName == "vModel") {
+                        properties.push({ name: "modelValue", value: expr })
+                        properties.push({ name: "\"onUpdate:modelValue\"", value: `v => ${expr} = v` })
+                        continue
+                    }
+
+                    properties.push({ name: propertyName, value: expr })
                     continue
                 }
             }
@@ -129,23 +141,28 @@ function _transpileJSX(source: string) {
                 parser.readUntil(">")
                 parser.index++
 
-                if (children.length > 0) {
-                    if (children.length == 1) {
-                        if (isComponent) {
-                            result += `, () => (${children[0]})`
+                if (!isFragment) {
+                    if (children.length > 0) {
+                        if (children.length == 1) {
+                            if (isComponent) {
+                                result += `, () => (${children[0]})`
+                            } else {
+                                result += `, ${children[0]}`
+                            }
                         } else {
-                            result += `, ${children[0]}`
-                        }
-                    } else {
-                        if (isComponent) {
-                            result += `, () => [${children.join(", ")}]`
-                        } else {
-                            result += `, [${children.join(", ")}]`
+                            if (isComponent) {
+                                result += `, () => [${children.join(", ")}]`
+                            } else {
+                                result += `, [${children.join(", ")}]`
+                            }
                         }
                     }
-                }
 
-                result += ")"
+                    result += ")"
+                } else {
+                    result += children.join(", ")
+                    result += "]"
+                }
                 break
             }
 

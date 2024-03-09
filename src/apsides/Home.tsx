@@ -15,7 +15,7 @@ export const Home = (defineComponent({
     name: "Home",
     setup(props, ctx) {
         const packages: _Package[] = [
-            { label: "UI Components", icon: mdiButtonPointer, route: { name: "Form" } },
+            { label: "UI Components", icon: mdiButtonPointer, route: { name: "Components" } },
             { label: "Form Builder", icon: mdiFormTextbox, route: { name: "Form" } },
             { label: "Struct", icon: mdiCodeJson, route: { name: "Form" } },
             { label: "RPC", icon: mdiAccessPoint, route: { name: "Form" } }
