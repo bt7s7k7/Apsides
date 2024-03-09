@@ -173,17 +173,10 @@ function table() {
             items.push(new Item({ name: "Ash", cost: 8 }))
 
             function deleteElement(/** @type {string[]} */ path) {
-                const index = +path.pop()
+                const index = +path[path.length - 1]
 
                 return () => {
-                    const mutation = new Mutation.SpliceMutation({
-                        type: "mut_splice",
-                        deleteCount: 1,
-                        index, path,
-                        items: []
-                    })
-
-                    Mutation.apply(form, null, mutation)
+                    const [mutation] = Mutation.create(form, null, v => v.value.splice(index, 1))
                     changes.value.push(mutation.serialize())
                 }
             }
@@ -209,18 +202,24 @@ function table() {
                 }
             })
 
-            function addItem() {
+            function addItem(event) {
                 const createForm = useForm({
-                    value: Item.default()
+                    value: Item.default(),
+                    fieldOptions: { labelWidth: 50 }
                 })
 
-                emitter.modal(FormView, {
+                emitter.popup(event.target, FormView, {
+                    align: "bottom-right",
                     contentProps: { form: createForm },
-                    props: { okButton: true, cancelButton: true },
+                    props: {
+                        okButton: true, cancelButton: true,
+                        class: "border w-200",
+                        noTransition: true
+                    }
                 }).then(confirm => {
                     if (!confirm) return
-                    const mutations = Mutation.create(form, null, v => v.value.push(createForm.value))
-                    changes.value.push(mutations[0].serialize())
+                    const [mutation] = Mutation.create(form, null, v => v.value.push(createForm.value))
+                    changes.value.push(mutation.serialize())
                 })
             }
 
