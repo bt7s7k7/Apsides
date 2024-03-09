@@ -2,6 +2,7 @@ import { mdiCircleOutline, mdiCog, mdiDelete, mdiFileOutline, mdiPlus } from "@m
 import { defineComponent, ref } from "vue"
 import { Button } from "../vue3gui/Button"
 import { Circle } from "../vue3gui/Circle"
+import { useDynamicsEmitter } from "../vue3gui/DynamicsEmitter"
 import { Icon } from "../vue3gui/Icon"
 import { LoadingIndicator } from "../vue3gui/LoadingIndicator"
 import { MenuItem } from "../vue3gui/MenuItem"
@@ -266,5 +267,46 @@ function blocks() {
                 <div class="p-1 bg-primary-translucent">Translucent</div>
             </div>
         </div>
+    })
+}
+
+function emitter() {
+    return defineComponent({
+        name: "Emitter",
+        setup(props, ctx) {
+            const emitter = useDynamicsEmitter()
+
+            function modal() {
+                emitter.modal(() => "Hello", {
+                    props: { cancelButton: true }
+                })
+            }
+
+            function confirm() {
+                emitter.confirm(() => "Confirm?")
+            }
+
+            function prompt() {
+                emitter.prompt(() => "Enter Text")
+            }
+
+            function menu(event) {
+                emitter.menu(event.target, () => "Hello", {
+                    props: {
+                        backdropCancels: true,
+                        class: "shadow"
+                    }
+                })
+            }
+
+            return () => <>
+                <div class="flex row gap-2">
+                    <Button label="Modal" onClick={modal} />
+                    <Button label="Confirm" onClick={confirm} />
+                    <Button label="Prompt" onClick={prompt} />
+                    <Button label="Menu" onClick={menu} />
+                </div>
+            </>
+        }
     })
 }

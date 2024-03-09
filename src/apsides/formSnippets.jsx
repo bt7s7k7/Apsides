@@ -208,13 +208,11 @@ function table() {
                     fieldOptions: { labelWidth: 50 }
                 })
 
-                emitter.popup(event.target, FormView, {
-                    align: "bottom-right",
+                emitter.menu(event.target, FormView, {
                     contentProps: { form: createForm },
                     props: {
                         okButton: true, cancelButton: true,
-                        class: "border w-200",
-                        noTransition: true
+                        class: "border w-200"
                     }
                 }).then(confirm => {
                     if (!confirm) return

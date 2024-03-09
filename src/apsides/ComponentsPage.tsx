@@ -76,6 +76,21 @@ export const ComponentsPage = (defineComponent({
                 </p>
                 <ComponentEditor name="components_blocks" code={snippets.blocks} />
 
+                <h1>Utility classes</h1>
+                <p>
+                    This package offers many hooks to simplify interop between Vue reactivity and the DOM. There is also a facility for creating popups and modals.
+                </p>
+
+                <h2 class="mt-4">Dynamics Emitter</h2>
+                <p>
+                    The <code>DynamicsEmitter</code> is an object that allows creating various popups and modals. The content can be any component, either a simple functional
+                    component like in the example or an full component with props using the <code>contentProps</code> option. All functions return a promise, which resolves
+                    to the return value of the emission, after the user has confirmed or canceled the popup. Usually this is a simple <code>boolean</code>, but for example
+                    <code>prompt</code> or <code>genericModal</code> return different types.
+                </p>
+                <ComponentEditor name="components_emitter" code={snippets.emitter} />
+
+
                 <div class="h-500"></div>
             </div>
         )
