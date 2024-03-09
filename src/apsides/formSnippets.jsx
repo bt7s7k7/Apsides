@@ -2,7 +2,7 @@ import { mdiDelete, mdiPlus } from "@mdi/js"
 import { defineComponent, reactive, ref } from "vue"
 import { FormView } from "../formBuilder/FormView"
 import { useForm } from "../formBuilder/useForm"
-import { CustomFieldAttribute, NumberField, TableAttribute } from "../formML/Form"
+import { CustomFieldAttribute, NumberField, StringField, TableAttribute } from "../formML/Form"
 import { Mutation } from "../struct/Mutation"
 import { Struct } from "../struct/Struct"
 import { Type } from "../struct/Type"
@@ -244,5 +244,51 @@ function table() {
                 </div>
             )
         }
+    })
+}
+
+function reference() {
+    const Sample_t = Type.object({
+        string: Type.string,
+        // Using an explicit field, all changes are atomic and cancellable
+        explicit: Type.string.as(Type.annotate,
+            new CustomFieldAttribute(
+                new StringField({ explicit: true })
+            )
+        ),
+        number: Type.number,
+        integer: Type.number.as(Type.annotate,
+            new CustomFieldAttribute(
+                NumberField.INTEGER
+            )
+        ),
+        minMax: Type.number.as(Type.annotate,
+            new CustomFieldAttribute(
+                new NumberField({ min: 1, max: 2 })
+            )
+        ),
+        boolean: Type.boolean,
+        nullable: Type.string.as(Type.nullable)
+    })
+
+    return defineComponent({
+        name: "Intro",
+        setup(props, ctx) {
+            const person = ref(Sample_t.default())
+
+            const form = useForm({
+                value: person,
+                type: Sample_t
+            })
+
+            return () => (
+                <div>
+                    <FormView form={form} />
+                    <pre>
+                        {JSON.stringify(person.value, null, 4)}
+                    </pre>
+                </div>
+            )
+        },
     })
 }

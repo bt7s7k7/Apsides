@@ -36,6 +36,13 @@ export const FormPage = (defineComponent({
                     For displaying many objects at once a table can be used.
                 </p>
                 <ComponentEditor name="form_table" code={snippets.table} />
+
+                <h2 class="mt-4">Field reference</h2>
+                <p>
+                    Here is a showcase of all field types. Some fields also have properties, which change their look and or functionality.
+                </p>
+                <ComponentEditor name="form_reference" code={snippets.reference} />
+
                 <div class="h-500"></div>
             </div>
         )

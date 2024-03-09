@@ -1,10 +1,10 @@
 import { mdiAlert, mdiInformationBox } from "@mdi/js"
-import { InjectionKey, PropType, Ref, computed, defineComponent, h, inject, markRaw, provide, reactive, ref } from "vue"
+import { InjectionKey, PropType, Ref, computed, defineComponent, h, inject, markRaw, provide, reactive, ref, watch } from "vue"
 import { ImmutableList } from "../comTypes/ImmutableList"
 import { Optional } from "../comTypes/Optional"
 import { range, unreachable } from "../comTypes/util"
 import { Binding } from "../formML/Binding"
-import { CheckField, Form, FormField, InfoField, NumberField, ObjectField, SelectField, StringField, TableField } from "../formML/Form"
+import { CheckField, Form, FormField, InfoField, NullableField, NumberField, ObjectField, SelectField, StringField, TableField } from "../formML/Form"
 import { Mutation } from "../struct/Mutation"
 import { Struct } from "../struct/Struct"
 import { ButtonGroup } from "../vue3gui/Button"
@@ -129,7 +129,9 @@ export const FieldGroup = defineComponent({
 export const FieldDrawer = (defineComponent({
     name: "FieldDrawer",
     props: {
-        ...getFieldDrawerProps(FormField)
+        ...getFieldDrawerProps(FormField),
+        prefix: { type: Function as PropType<() => any> },
+        fieldOnly: { type: Boolean }
     },
     setup(props, ctx) {
         const field = _FIELD_DRAWERS.get(props.field.constructor as any)
@@ -143,14 +145,15 @@ export const FieldDrawer = (defineComponent({
             )
         } else {
             const base = () => {
-                let result = h(field, props)
+                const fieldProps = { field: props.field, binding: props.binding, base: props.base, label: props.label, path: props.path }
+                let result = h(field, fieldProps)
                 if (options.replace) {
-                    const replace = options.replace(props)
+                    const replace = options.replace(fieldProps)
                     if (replace != null) result = replace
                 }
 
                 if (options.disable) {
-                    result = <ButtonGroup disabled={options.disable(props)}>{result}</ButtonGroup>
+                    result = <ButtonGroup disabled={options.disable(fieldProps)}>{result}</ButtonGroup>
                 }
 
                 return result
@@ -160,15 +163,21 @@ export const FieldDrawer = (defineComponent({
                 return base
             }
 
+            if (props.fieldOnly) {
+                return () => <>
+                    {options.prefix?.(props)}{props.prefix?.()}{base()}{options.suffix?.(props)}
+                </>
+            }
+
             if (props.label != "" && (typeof options.labelWidth != "number" || options.labelWidth > 0)) {
                 return () => <>
                     <div data-field-label={key} key={"label:" + key} class="flex row">{options.prefix?.(props)}{props.label}</div>
-                    <div data-field={key} key={"field:" + key} class="flex row">{base()}{options.suffix?.(props)}</div>
+                    <div data-field={key} key={"field:" + key} class="flex row">{props.prefix?.()}{base()}{options.suffix?.(props)}</div>
                 </>
             } else {
                 return () => <>
                     <div></div>
-                    <div data-field={key} key={"field:" + key} class="flex row">{options.prefix?.(props)}{base()}{options.suffix?.(props)}</div>
+                    <div data-field={key} key={"field:" + key} class="flex row">{options.prefix?.(props)}{props.prefix?.()}{base()}{options.suffix?.(props)}</div>
                 </>
             }
         }
@@ -466,3 +475,33 @@ export const InfoFieldDrawer = defineComponent({
     }
 })
 registerFieldDrawer(InfoField, InfoFieldDrawer)
+
+export const NullableFieldDrawer = defineComponent({
+    name: "NullableFieldDrawer",
+    props: {
+        ...getFieldDrawerProps(NullableField)
+    },
+    setup(props, ctx) {
+        const value = useFieldDrawerValue(props)
+        const checked = ref(value.value != null)
+
+        watch(checked, checked => {
+            if (checked) {
+                value.value = props.field.defaultValue
+            } else {
+                value.value = null
+            }
+        })
+
+        const checkbox = () => <input type="checkbox" checked={checked.value} onChange={e => checked.value = (e.target as HTMLInputElement).checked} />
+
+        return () => (
+            value.value == null ? (
+                checkbox()
+            ) : (
+                <FieldDrawer {...props} field={props.field.base} fieldOnly prefix={checkbox} />
+            )
+        )
+    },
+})
+registerFieldDrawer(NullableField, NullableFieldDrawer)

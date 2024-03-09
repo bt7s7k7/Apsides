@@ -76,6 +76,15 @@ export namespace Form {
             return new TableField({ properties, showIndex })
         }
 
+        if (Type.isNullable(type)) {
+            const baseField = getField(type.base)
+            if (baseField == null) return null
+            return new NullableField({
+                base: baseField,
+                defaultValue: type.base.default()
+            })
+        }
+
         return null
     }
 }
@@ -128,6 +137,12 @@ export class InfoField extends Struct.define("InfoField", {
     decoration: Type.enum("border", "info", "warning", "error").as(Type.optional)
 }) { }
 FormField_t.register(InfoField)
+
+export class NullableField extends Struct.define("NullableField", {
+    base: FormField_t.base,
+    defaultValue: Type.passthrough<any>(null)
+}) { }
+FormField_t.register(NullableField)
 
 export class CustomFieldAttribute<T extends Type<any> = Type<any>> {
     public getField(type: Type<any>): FormField {
