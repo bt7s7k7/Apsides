@@ -7,7 +7,7 @@ export const FormPage = (defineComponent({
     name: "FormPage",
     setup(props, ctx) {
         return () => (
-            <div class="as-page">
+            <div class="smart-page">
                 <Header />
                 <h1>Form Builder</h1>
                 <ComponentEditor name="form_intro" code={snippets.intro} />

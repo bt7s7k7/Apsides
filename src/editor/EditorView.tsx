@@ -1,4 +1,5 @@
 import { mdiChevronRight } from "@mdi/js"
+import { EditorConfiguration } from "codemirror"
 import { PropType, defineComponent, ref, shallowRef, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { eventDecorator } from "../eventDecorator"
@@ -8,7 +9,6 @@ import { Tab, TabbedContainer, Tabs, useTabs } from "../vue3gui/Tabs"
 import { useResizeWatcher } from "../vue3gui/util"
 import { Editor, EditorHighlightOptions } from "./Editor"
 import { EditorState, useEditorState } from "./useEditorState"
-import { EditorConfiguration } from "codemirror"
 
 export const EditorView = eventDecorator(defineComponent({
     name: "EditorView",
@@ -21,7 +21,8 @@ export const EditorView = eventDecorator(defineComponent({
         noLoad: { type: Boolean },
         noAST: { type: Boolean },
         customOutput: { type: null as unknown as PropType<() => any> },
-        config: { type: Object as PropType<EditorConfiguration> }
+        config: { type: Object as PropType<EditorConfiguration> },
+        codeRatio: { type: Number }
     },
     emits: {
         compile: (state: EditorState, code: string) => true
@@ -125,7 +126,7 @@ export const EditorView = eventDecorator(defineComponent({
         return () => (
             <div class="flex column flex-fill">
                 <div class="flex row border-bottom">
-                    <div class="border-right p-1 px-2 flex-fill flex row">
+                    <div class="border-right p-1 px-2 flex-fill flex row" style={{ flexGrow: props.codeRatio }}>
                         {ctx.slots.default?.()}
                         <div class="flex-fill"></div>
                         <Button onClick={runCode} variant="success">Run <Icon icon={mdiChevronRight} /> </Button>
@@ -135,7 +136,7 @@ export const EditorView = eventDecorator(defineComponent({
                     </div>
                 </div>
                 <div class="flex row flex-fill">
-                    <div class="flex-fill border-right">
+                    <div class="flex-fill border-right" style={{ flexGrow: props.codeRatio }}>
                         <Editor
                             content={code.value}
                             onChange={v => code.value = v}

@@ -11,3 +11,18 @@ code {
     padding: calc(var(--size-int) / 2);
     border-radius: var(--default-border-radius);
 }
+
+.smart-page {
+    max-width: calc(1050px + var(--size-int)*8);
+    width: 100%;
+    margin: 0 auto 0 auto;
+    padding-left: calc(var(--size-int) * 4);
+    padding-right: calc(var(--size-int) * 4);
+    flex-direction: column;
+
+    .-insert {
+        --expand: min(0px, max(-100px, calc((100vw - 1050px) / -2 + var(--size-int) * 4)));
+        margin-right: var(--expand);
+        margin-left: var(--expand);
+    }
+}
