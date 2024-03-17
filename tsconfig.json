@@ -17,13 +17,14 @@
         "types": [
             "vite/client"
         ],
-        "useDefineForClassFields": false
+        "useDefineForClassFields": false,
+        "outDir": "dist-types"
     },
     "include": [
         "src/**/*.ts",
         "src/**/*.d.ts",
         "src/**/*.tsx",
         "src/**/*.vue",
-        "src/apsides/**/*.jsx",
+        "src/apsides/**/*.jsx"
     ]
 }

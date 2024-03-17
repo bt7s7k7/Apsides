@@ -6,6 +6,10 @@ dist-ssr
 tsconfig.tsbuildinfo
 yarn-error.log
 
+# Custom build pipeline
+/pkg-*
+/dist-types
+
 # UCPEM
 ucpem_ports
 /.vscode
