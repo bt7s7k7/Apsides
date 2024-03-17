@@ -41,7 +41,7 @@ export const ComponentsPage = (defineComponent({
                     and the DOM.
                 </p>
                 <h1>Examples</h1>
-                <div class="flex row gap-2">
+                <div class="flex row gap-2" style="width: 100%; aspect-ratio: 2.477711535306022">
                     {[playlist, console].map(src => (
                         <Button onClick={openExamplePreview(src)} shadow textual class="flex-fill border rounded overflow-hidden p-0">
                             <img class="w-max-fill" src={src} />
