@@ -1,6 +1,7 @@
 import { h } from "vue"
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router"
 import { ComponentsPage } from "../apsides/components/ComponentsPage"
+import { StructPage } from "../apsides/struct/StructPage"
 import { FormPage } from "../apsides/form/FormPage"
 import { Home } from "../apsides/Home"
 
@@ -19,6 +20,11 @@ const routes: RouteRecordRaw[] = [
         name: "Components",
         path: "/ui",
         component: ComponentsPage
+    },
+    {
+        name: "Struct",
+        path: "/struct",
+        component: StructPage
     },
     {
         name: "404",
