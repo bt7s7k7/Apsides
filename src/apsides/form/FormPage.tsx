@@ -1,6 +1,6 @@
 import { defineComponent } from "vue"
-import { ComponentEditor } from "./ComponentEditor"
-import { Header } from "./Header"
+import { ComponentEditor } from "../ComponentEditor"
+import { Header } from "../Header"
 import snippets from "./formSnippets?snippets"
 
 export const FormPage = (defineComponent({

@@ -1,13 +1,13 @@
 import { mdiDelete, mdiPlus } from "@mdi/js"
 import { defineComponent, reactive, ref } from "vue"
-import { FormView } from "../formBuilder/FormView"
-import { useForm } from "../formBuilder/useForm"
-import { CustomFieldAttribute, NumberField, StringField, TableAttribute } from "../formML/Form"
-import { Mutation } from "../struct/Mutation"
-import { Struct } from "../struct/Struct"
-import { Type } from "../struct/Type"
-import { Button } from "../vue3gui/Button"
-import { useDynamicsEmitter } from "../vue3gui/DynamicsEmitter"
+import { FormView } from "../../formBuilder/FormView"
+import { useForm } from "../../formBuilder/useForm"
+import { CustomFieldAttribute, NumberField, StringField, TableAttribute } from "../../formML/Form"
+import { Mutation } from "../../struct/Mutation"
+import { Struct } from "../../struct/Struct"
+import { Type } from "../../struct/Type"
+import { Button } from "../../vue3gui/Button"
+import { useDynamicsEmitter } from "../../vue3gui/DynamicsEmitter"
 
 function intro() {
     class Person extends Struct.define("Person", {

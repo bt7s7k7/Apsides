@@ -1,11 +1,31 @@
 import { defineComponent } from "vue"
-import { ComponentEditor } from "./ComponentEditor"
-import { Header } from "./Header"
+import { Button } from "../../vue3gui/Button"
+import { useDynamicsEmitter } from "../../vue3gui/DynamicsEmitter"
+import { ComponentEditor } from "../ComponentEditor"
+import { Header } from "../Header"
 import snippets from "./componentsSnippets?snippets"
+import console from "./console.png"
+import playlist from "./playlist.png"
 
 export const ComponentsPage = (defineComponent({
     name: "ComponentsPage",
     setup(props, ctx) {
+        const emitter = useDynamicsEmitter()
+
+        function openExamplePreview(src: string) {
+            return () => {
+                emitter.modal(() => <img src={src} class="w-max-fill h-max-fill" />, {
+                    props: {
+                        backdropCancels: true,
+                        contain: true,
+                        contentClass: "passthrough",
+                        noDefaultStyle: true,
+                        background: "clear"
+                    },
+                })
+            }
+        }
+
         return () => (
             <div class="smart-page">
                 <Header />
@@ -20,6 +40,14 @@ export const ComponentsPage = (defineComponent({
                     and variables, it is not hard to design new components to fit the style. The library also provides many hooks, allowing the interop between Vue reactivity
                     and the DOM.
                 </p>
+                <h1>Examples</h1>
+                <div class="flex row gap-2">
+                    {[playlist, console].map(src => (
+                        <Button onClick={openExamplePreview(src)} shadow textual class="flex-fill border rounded overflow-hidden p-0">
+                            <img class="w-max-fill" src={src} />
+                        </Button>
+                    ))}
+                </div>
                 <h2>Buttons</h2>
                 <p>
                     Buttons are the main component offered by this library. They can be customized use multiple colors and styles. As an action they emit an <code>onClick</code> event

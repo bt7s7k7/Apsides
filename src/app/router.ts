@@ -1,7 +1,7 @@
 import { h } from "vue"
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router"
-import { ComponentsPage } from "../apsides/ComponentsPage"
-import { FormPage } from "../apsides/FormPage"
+import { ComponentsPage } from "../apsides/components/ComponentsPage"
+import { FormPage } from "../apsides/form/FormPage"
 import { Home } from "../apsides/Home"
 
 const routes: RouteRecordRaw[] = [

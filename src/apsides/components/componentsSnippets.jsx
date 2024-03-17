@@ -1,18 +1,18 @@
 import { mdiCircleOutline, mdiCog, mdiDelete, mdiFileOutline, mdiPlus } from "@mdi/js"
 import { defineComponent, ref } from "vue"
-import { Button } from "../vue3gui/Button"
-import { Circle } from "../vue3gui/Circle"
-import { useDynamicsEmitter } from "../vue3gui/DynamicsEmitter"
-import { Icon } from "../vue3gui/Icon"
-import { LoadingIndicator } from "../vue3gui/LoadingIndicator"
-import { MenuItem } from "../vue3gui/MenuItem"
-import { ProgressBar } from "../vue3gui/ProgressBar"
-import { Slider } from "../vue3gui/Slider"
-import { TextField } from "../vue3gui/TextField"
-import { UploadOverlay } from "../vue3gui/UploadOverlay"
-import { grid } from "../vue3gui/grid"
-import { useEventListener } from "../vue3gui/util"
-import { Variant } from "../vue3gui/variants"
+import { Button } from "../../vue3gui/Button"
+import { Circle } from "../../vue3gui/Circle"
+import { useDynamicsEmitter } from "../../vue3gui/DynamicsEmitter"
+import { Icon } from "../../vue3gui/Icon"
+import { LoadingIndicator } from "../../vue3gui/LoadingIndicator"
+import { MenuItem } from "../../vue3gui/MenuItem"
+import { ProgressBar } from "../../vue3gui/ProgressBar"
+import { Slider } from "../../vue3gui/Slider"
+import { TextField } from "../../vue3gui/TextField"
+import { UploadOverlay } from "../../vue3gui/UploadOverlay"
+import { grid } from "../../vue3gui/grid"
+import { useEventListener } from "../../vue3gui/util"
+import { Variant } from "../../vue3gui/variants"
 
 function buttons() {
     return defineComponent({
@@ -30,6 +30,7 @@ function buttons() {
                 <Button disabled label="disabled" />
                 <Button plain label="plain" />
                 <Button small label="small" />
+                <Button shadow textual label="shadow" />
                 <Button icon={mdiCog} label="icon" />
             </div>
         </div>
