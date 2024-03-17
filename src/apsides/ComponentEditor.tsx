@@ -1,6 +1,6 @@
 import { mdiCircleOutline, mdiCog, mdiDelete, mdiFileOutline, mdiPlus } from "@mdi/js"
 import "codemirror/mode/jsx/jsx.js"
-import { computed, defineComponent, h, reactive, ref, shallowRef, watch } from "vue"
+import { computed, defineComponent, h, onMounted, reactive, ref, shallowRef, watch } from "vue"
 import { GenericParser } from "../comTypes/GenericParser"
 import { escapeHTML, isUpperCase, isWhitespace, isWord, runString, unreachable } from "../comTypes/util"
 import { EditorView } from "../editor/EditorView"
@@ -194,6 +194,22 @@ export const ComponentEditor = (defineComponent({
     },
     setup(props, ctx) {
         const component = shallowRef<any | null>(null)
+        const mount = ref(false)
+        const placeholder = ref<HTMLElement>()
+        let observer: IntersectionObserver | null = null
+
+        onMounted(() => {
+            observer = new IntersectionObserver(([entry]) => {
+                if (!entry.isIntersecting) return
+                observer!.disconnect()
+                observer = null
+                window.requestIdleCallback(() => {
+                    mount.value = true
+                })
+            })
+            observer.observe(placeholder.value!)
+        })
+
 
         function customOutput() {
             return component.value && <component.value />
@@ -220,15 +236,19 @@ export const ComponentEditor = (defineComponent({
         }
 
         return () => <>
-            <EditorView
-                class={["-insert border rounded overflow-hidden", props.large ? "h-500" : "h-300"]}
-                code={props.code} mode="jsx"
-                noAST noLoad
-                onCompile={compile}
-                customOutput={customOutput}
-                config={{ lineWrapping: false }}
-                codeRatio={1.25}
-            />
+            {mount.value ? (
+                <EditorView
+                    class={["-insert border rounded overflow-hidden", props.large ? "h-500" : "h-300"]}
+                    code={props.code} mode="jsx"
+                    noAST noLoad
+                    onCompile={compile}
+                    customOutput={customOutput}
+                    config={{ lineWrapping: false }}
+                    codeRatio={1.25}
+                />
+            ) : (
+                <div class={["-insert border rounded", props.large ? "h-500" : "h-300"]} ref={placeholder}></div>
+            )}
         </>
     }
 }))

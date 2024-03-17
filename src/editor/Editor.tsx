@@ -1,7 +1,7 @@
 import { EditorConfiguration, EditorFromTextArea, KeyMap, TextMarker, fromTextArea } from "codemirror"
 import "codemirror/addon/mode/simple.js"
 import "codemirror/lib/codemirror.css"
-import { PropType, defineComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { PropType, defineComponent, onBeforeUnmount, onMounted, ref, watch } from "vue"
 
 export type EditorHighlightOptions = { offset: number, length: number, lineOffset?: number }
 export const Editor = (defineComponent({
@@ -26,6 +26,7 @@ export const Editor = (defineComponent({
         })
 
         onMounted(() => {
+            textarea.value!.value = props.content
             editor = fromTextArea(textarea.value!, {
                 lineNumbers: true,
                 mode: props.mode ?? "simple",
@@ -38,10 +39,7 @@ export const Editor = (defineComponent({
                 },
             })
 
-            editor.setValue(props.content)
-
             editor.getWrapperElement().classList.add("absolute-fill")
-            nextTick(() => editor!.refresh())
 
             editor.on("change", () => {
                 value = editor!.getValue()
