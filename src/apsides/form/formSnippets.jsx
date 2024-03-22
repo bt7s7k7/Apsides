@@ -173,7 +173,7 @@ function table() {
             items.push(new Item({ name: "Ash", cost: 8 }))
 
             function deleteElement(/** @type {string[]} */ path) {
-                const index = +path[path.length - 1]
+                const index = +path[0]
 
                 return () => {
                     const [mutation] = Mutation.create(form, null, v => v.value.splice(index, 1))
@@ -193,7 +193,7 @@ function table() {
                     suffix(props) {
                         const path = props.path.toArray()
 
-                        if (path[0] == "value" && path.length == 2) {
+                        if (path.length == 1) {
                             return <td class="w-0">
                                 <Button icon={mdiDelete} onClick={deleteElement(path)} clear />
                             </td>
