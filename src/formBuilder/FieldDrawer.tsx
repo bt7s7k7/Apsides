@@ -2,7 +2,7 @@ import { mdiAlert, mdiInformationBox } from "@mdi/js"
 import { InjectionKey, PropType, computed, defineComponent, h, inject, markRaw, nextTick, provide, reactive, ref, watch } from "vue"
 import { ImmutableList } from "../comTypes/ImmutableList"
 import { Optional } from "../comTypes/Optional"
-import { range, unreachable } from "../comTypes/util"
+import { range, toString, unreachable } from "../comTypes/util"
 import { Binding } from "../formML/Binding"
 import { CheckField, Form, FormField, InfoField, NullableField, NumberField, ObjectField, SelectField, StringField, TableField } from "../formML/Form"
 import { Mutation } from "../struct/Mutation"
@@ -259,7 +259,7 @@ export const StringFieldDrawer = defineComponent({
         return () => (
             <TextField
                 class="flex-fill border rounded" vModel={value.value} onChange={value.changed} clear
-                explicit={props.field.explicit ?? undefined}
+                explicit={props.field.explicit ?? undefined} placeholder={value.value == null ? "null" : undefined}
             />
         )
     },
@@ -289,7 +289,8 @@ export const NumberFieldDrawer = defineComponent({
                 vModel={numberValue.value} onChange={changed} clear
                 min={field.min ?? undefined} max={field.max ?? undefined} validate
                 onErrorChanged={newError => error.value = newError}
-                explicit={props.field.explicit ?? undefined} required
+                explicit={props.field.explicit ?? undefined} required={!props.field.nullable}
+                placeholder={props.field.nullable ? "null" : undefined}
             />
         )
     },
@@ -316,23 +317,34 @@ export const CheckFieldDrawer = defineComponent({
 })
 registerFieldDrawer(CheckField, CheckFieldDrawer)
 
+const _NULL_OPTION = Symbol.for("formBuilder.nullOption")
 export const SelectFieldDrawer = defineComponent({
     name: "SelectFieldDrawer",
     props: {
         ...getFieldDrawerProps(SelectField)
     },
     setup(props, ctx) {
-        const value = useFieldDrawerValue(props)
+        const value = useFieldDrawerValue(props, v => v == _NULL_OPTION ? null : v)
+
+        let options = props.field.options as (string | number | typeof _NULL_OPTION)[]
+        let optionLabels = props.field.labels ?? options.map(toString)
+
+        if (props.field.nullable) {
+            options = [_NULL_OPTION, ...options]
+            optionLabels = ["N/A", ...optionLabels]
+        }
+
+        const labelLookup = new Map(options.map((v, i) => [v, optionLabels[i]]))
 
         return () => (
             <MenuItem
                 forceWidth defaultAction clear
                 class="border rounded flex-fill"
             >
-                <div class="flex-fill">{value.value}</div>
+                <div class="flex-fill">{value.value == null ? "N/A" : labelLookup.get(value.value) ?? value.value}</div>
                 <Icon icon="M12,18.17L8.83,15L7.42,16.41L12,21L16.59,16.41L15.17,15M12,5.83L15.17,9L16.58,7.59L12,3L7.41,7.59L8.83,9L12,5.83Z" />
-                {props.field.options.map(option => (
-                    <MenuItem label={option} key={option} onClick={() => { value.value = option; value.changed() }} />
+                {options.map((option, i) => (
+                    <MenuItem label={optionLabels[i]} key={optionLabels[i]} onClick={() => { value.value = option; value.changed() }} />
                 ))}
             </MenuItem>
         )

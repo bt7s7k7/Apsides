@@ -39,13 +39,24 @@ export namespace Form {
             return fieldAttr.getField(type)
         }
 
-        if (type.name == Type.string.name) return new StringField()
-        if (type.name == Type.number.name) return new NumberField()
+        const explicitAttribute = metadata?.get(ExplicitFieldAttribute)
+
+        if (type.name == Type.string.name) return new StringField(explicitAttribute ? { explicit: true } : undefined)
+        if (type.name == Type.number.name) return new NumberField(explicitAttribute ? { explicit: true } : undefined)
         if (type.name == Type.boolean.name) return new CheckField()
 
-        if (Type.isEnum(type)) return new SelectField({
-            options: type.entries.filter(Predicate.typeOf("string"))
-        })
+        if (Type.isEnum(type)) {
+            const select = new SelectField({
+                options: type.entries
+            })
+
+            const label = metadata?.get(EnumLabelsAttribute)
+            if (label) {
+                select.labels = label.labels
+            }
+
+            return select
+        }
 
         if (Type.isObject(type)) {
             const properties = _getProperties(type)
@@ -77,12 +88,16 @@ export namespace Form {
         }
 
         if (Type.isNullable(type)) {
-            const baseField = getField(type.base)
+            let baseField = getField(type.base)
             if (baseField == null) return null
 
-            if (baseField instanceof StringField || baseField instanceof NumberField) {
-                baseField.nullable = true
-                return baseField
+            if (baseField instanceof StringField || baseField instanceof NumberField || baseField instanceof SelectField) {
+                const nullableField = Type.clone(Struct.getType(baseField), baseField) as StringField | NumberField | SelectField
+                nullableField.nullable = true
+
+                if (explicitAttribute && !(nullableField instanceof SelectField)) nullableField.explicit = true
+
+                return nullableField
             }
 
             return new NullableField({
@@ -125,7 +140,9 @@ export class CheckField extends Struct.define("CheckField", {}, FormField) { }
 FormField_t.register(CheckField)
 
 export class SelectField extends Struct.define("SelectField", {
-    options: Type.string.as(Type.array)
+    options: Type.passthrough<any>(null).as(Type.array),
+    labels: Type.string.as(Type.array).as(Type.nullable, { skipNullSerialize: true }),
+    nullable: Type.boolean.as(Type.nullable, { skipNullSerialize: true })
 }, FormField) { }
 FormField_t.register(SelectField)
 
@@ -180,4 +197,14 @@ export class LabelAttribute {
     constructor(
         public readonly label: string
     ) { }
+}
+
+export class EnumLabelsAttribute {
+    constructor(
+        public readonly labels: string[]
+    ) { }
+}
+
+export class ExplicitFieldAttribute {
+    constructor() { }
 }
