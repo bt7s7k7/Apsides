@@ -1,7 +1,7 @@
 /// <reference path="./.vscode/config.d.ts" />
 // @ts-check
 
-const { project, github, join, constants, run, copy, getProjectDetails } = require("ucpem")
+const { project, github, join, constants, run, copy, getProjectDetails, log } = require("ucpem")
 const { readdir, writeFile, mkdir, rm, readFile } = require("fs/promises")
 const { extname, basename } = require("path")
 const { readFileSync } = require("fs")
@@ -214,3 +214,11 @@ project.script("build-all", async () => {
     await run(`yarn concurrently -n ${packages.map(v => v.shortName).join(",")} ${packages.map(v => `ucpem run build-package ${v.shortName}`).map(v => JSON.stringify(v)).join(" ")}`)
 }, { desc: "Builds all packages" })
 
+project.script("build-clean", async () => {
+    for await (const dirent of await readdir(constants.projectPath)) {
+        if (dirent.startsWith("pkg-")) {
+            log("Deleting " + dirent)
+            await rm(join(constants.projectPath, dirent), { recursive: true })
+        }
+    }
+})
