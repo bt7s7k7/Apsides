@@ -79,9 +79,15 @@ export namespace Form {
         if (Type.isNullable(type)) {
             const baseField = getField(type.base)
             if (baseField == null) return null
+
+            if (baseField instanceof StringField || baseField instanceof NumberField) {
+                baseField.nullable = true
+                return baseField
+            }
+
             return new NullableField({
                 base: baseField,
-                defaultValue: type.base.default()
+                typeName: type.base.name
             })
         }
 
@@ -96,7 +102,8 @@ export class PropertyInfo extends Struct.define("PropertyInfo", {
 }) { }
 
 export class StringField extends Struct.define("TextField", {
-    explicit: Type.boolean.as(Type.nullable)
+    explicit: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
+    nullable: Type.boolean.as(Type.nullable, { skipNullSerialize: true })
 }, FormField) { }
 FormField_t.register(StringField)
 
@@ -104,7 +111,8 @@ export class NumberField extends Struct.define("NumberField", {
     integer: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
     min: Type.number.as(Type.nullable, { skipNullSerialize: true }),
     max: Type.number.as(Type.nullable, { skipNullSerialize: true }),
-    explicit: Type.boolean.as(Type.nullable)
+    explicit: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
+    nullable: Type.boolean.as(Type.nullable, { skipNullSerialize: true })
 }, FormField) {
     public static readonly INTEGER = new NumberField({ integer: true })
     public static readonly POSITIVE_INTEGER = new NumberField({ integer: true, min: 0 })
@@ -140,7 +148,7 @@ FormField_t.register(InfoField)
 
 export class NullableField extends Struct.define("NullableField", {
     base: FormField_t.base,
-    defaultValue: Type.passthrough<any>(null)
+    typeName: Type.string
 }) { }
 FormField_t.register(NullableField)
 

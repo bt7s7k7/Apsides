@@ -1,5 +1,5 @@
 import { mdiAlert, mdiInformationBox } from "@mdi/js"
-import { InjectionKey, PropType, Ref, computed, defineComponent, h, inject, markRaw, provide, reactive, ref, watch } from "vue"
+import { InjectionKey, PropType, computed, defineComponent, h, inject, markRaw, nextTick, provide, reactive, ref, watch } from "vue"
 import { ImmutableList } from "../comTypes/ImmutableList"
 import { Optional } from "../comTypes/Optional"
 import { range, unreachable } from "../comTypes/util"
@@ -16,8 +16,25 @@ import { numberModel } from "../vue3gui/util"
 
 type _Path = ImmutableList<string>
 type _FieldProps<T> = { field: T, base: any, binding: Binding, label: string, path: _Path }
-type _FieldDrawer<T> = { new(...args: any): { $props: _FieldProps<T> }, noFieldDecoration?: boolean }
+type _FieldDrawer<T> =
+    | { new(...args: any): { $props: _FieldProps<T> }, noFieldDecoration?: boolean, fullLine?: boolean }
+    | FieldDrawerDecorator<T>
 const _FIELD_DRAWERS = new Map<new (...args: any[]) => FormField, _FieldDrawer<FormField>>
+
+export class FieldDrawerDecorator<T> {
+    constructor(
+        public readonly name: string,
+        public readonly setup: (props: _FieldProps<T>) => FieldDrawerDecorator.Result
+    ) { }
+}
+
+export namespace FieldDrawerDecorator {
+    export interface Result {
+        field?: FormField | null
+        placeholder?: (() => any) | null
+        prefix?: (() => any) | null
+    }
+}
 
 
 markRaw(Binding.prototype)
@@ -25,7 +42,7 @@ markRaw(Form.prototype)
 markRaw(FormField.prototype)
 
 export function registerFieldDrawer<T extends new (...args: any[]) => FormField>(field: T, drawer: _FieldDrawer<InstanceType<T>>) {
-    _FIELD_DRAWERS.set(field, drawer)
+    _FIELD_DRAWERS.set(field, drawer as _FieldDrawer<FormField>)
 }
 
 export function getFieldDrawerProps<T>(type: abstract new (...args: any[]) => T) {
@@ -38,7 +55,7 @@ export function getFieldDrawerProps<T>(type: abstract new (...args: any[]) => T)
     } as const
 }
 
-export class FieldChangeEvent {
+export abstract class FieldEvent {
     protected _cachedPathArray: string[] | null = null
 
     public getPath() {
@@ -57,12 +74,6 @@ export class FieldChangeEvent {
         return this._cachedPathArray as readonly string[]
     }
 
-    public getMutation() {
-        const path = this.getPath().slice(0, -1)
-        const key = this.getPath().at(-1) ?? unreachable()
-        return new Mutation.AssignMutation({ type: "mut_assign", key, path, value: this.value }).setLocal()
-    }
-
     public isPath(test: Mutation.TypedPath) {
         const otherPath = Mutation.getPath(test)
         const currPath = this.getPath()
@@ -78,14 +89,36 @@ export class FieldChangeEvent {
     constructor(
         protected readonly _path: _Path,
         protected readonly _basePath: string[] | null | undefined,
-        public readonly value: any
     ) { }
 }
 
-export function useFieldDrawerValue<T = any>(props: Omit<_FieldProps<FormField>, "field">) {
+export class FieldChangeEvent extends FieldEvent {
+    public getMutation() {
+        const path = this.getPath().slice(0, -1)
+        const key = this.getPath().at(-1) ?? unreachable()
+        return new Mutation.AssignMutation({ type: "mut_assign", key, path, value: this.value }).setLocal()
+    }
+
+    constructor(
+        path: _Path, basePath: string[] | null | undefined,
+        public readonly value: any
+    ) { super(path, basePath) }
+}
+
+export class FieldInstantiationEvent extends FieldEvent {
+    constructor(
+        path: _Path, basePath: string[] | null | undefined,
+        public readonly type: string
+    ) { super(path, basePath) }
+}
+
+export function useFieldDrawerValue<T = any>(props: Omit<_FieldProps<FormField>, "field">, valueFilter?: (value: T) => T) {
     const value = computed({
         get: () => props.binding.getValue(props.base) as T,
-        set: (value: T) => props.binding.setValue(props.base, value)
+        set: (value: T) => {
+            if (valueFilter) value = valueFilter(value)
+            props.binding.setValue(props.base, value)
+        }
     })
 
     const options = useFieldOptions()
@@ -102,6 +135,7 @@ export interface FieldOptions {
     disable?: (props: _FieldProps<FormField>) => boolean
     replace?: (props: _FieldProps<FormField>) => any
     onChange?: (event: FieldChangeEvent) => void
+    instantiate?: (event: FieldInstantiationEvent) => any
     basePath?: string[]
     labelWidth: number | "auto"
 }
@@ -139,47 +173,77 @@ export const FieldDrawer = (defineComponent({
         const key = path.join(".")
         const options = useFieldOptions()
 
+        const drawError = (error: string) => <div class="monospace text-danger" style={grid().colspan(2).$}>{error}</div>
+        const drawLabel = (prefix?: () => any) => <div data-field-label={key} key={"label:" + key} class="flex row">{options.prefix?.(props)}{props.prefix?.()}{prefix?.()}{props.label}</div>
+
         if (field == null) {
             return () => (
-                <div class="monospace text-danger" style={grid().colspan(2).$}>No drawer registered for "{Struct.getBaseType(props.field).name}"</div>
+                drawError(`No drawer registered for "${Struct.getBaseType(props.field).name}"`)
             )
-        } else {
-            const base = () => {
-                const fieldProps = { field: props.field, binding: props.binding, base: props.base, label: props.label, path: props.path }
-                let result = h(field, fieldProps)
-                if (options.replace) {
-                    const replace = options.replace(fieldProps)
-                    if (replace != null) result = replace
-                }
+        }
 
-                if (options.disable) {
-                    result = <ButtonGroup disabled={options.disable(fieldProps)}>{result}</ButtonGroup>
-                }
+        if (field instanceof FieldDrawerDecorator) {
+            const fieldProps = { field: props.field, binding: props.binding, base: props.base, label: props.label, path: props.path }
+            const result = field.setup(fieldProps)
 
-                return result
+            return () => (
+                result.field ? (
+                    <FieldDrawer {...fieldProps} field={result.field} prefix={result.prefix ?? undefined} />
+                ) : result.placeholder ? <>
+                    {drawLabel(result.prefix ?? undefined)}
+                    <div data-field={key} key={"field:" + key} class="flex row">{result.placeholder()}{options.suffix?.(props)}</div>
+                </> : (
+                    drawError(`Form drawer decorator ${field.name} did not return any content`)
+                )
+            )
+        }
+
+        const base = () => {
+            const fieldProps = { field: props.field, binding: props.binding, base: props.base, label: props.label, path: props.path }
+            let result = h(field, fieldProps)
+            if (options.replace) {
+                const replace = options.replace(fieldProps)
+                if (replace != null) result = replace
             }
 
-            if (field.noFieldDecoration) {
-                return base
+            if (options.disable) {
+                result = <ButtonGroup disabled={options.disable(fieldProps)}>{result}</ButtonGroup>
             }
 
-            if (props.fieldOnly) {
+            return result
+        }
+
+        if (field.noFieldDecoration) {
+            return base
+        }
+
+        if (field.fullLine) {
+            if (props.label != "") {
                 return () => <>
-                    {options.prefix?.(props)}{props.prefix?.()}{base()}{options.suffix?.(props)}
-                </>
-            }
-
-            if (props.label != "" && (typeof options.labelWidth != "number" || options.labelWidth > 0)) {
-                return () => <>
-                    <div data-field-label={key} key={"label:" + key} class="flex row">{options.prefix?.(props)}{props.label}</div>
-                    <div data-field={key} key={"field:" + key} class="flex row">{props.prefix?.()}{base()}{options.suffix?.(props)}</div>
+                    {drawLabel()}
+                    {base()}
                 </>
             } else {
-                return () => <>
-                    <div></div>
-                    <div data-field={key} key={"field:" + key} class="flex row">{options.prefix?.(props)}{props.prefix?.()}{base()}{options.suffix?.(props)}</div>
-                </>
+                return base
             }
+        }
+
+        if (props.fieldOnly) {
+            return () => <>
+                {options.prefix?.(props)}{props.prefix?.()}{base()}{options.suffix?.(props)}
+            </>
+        }
+
+        if (props.label != "" && (typeof options.labelWidth != "number" || options.labelWidth > 0)) {
+            return () => <>
+                {drawLabel()}
+                <div data-field={key} key={"field:" + key} class="flex row">{props.prefix?.()}{base()}{options.suffix?.(props)}</div>
+            </>
+        } else {
+            return () => <>
+                <div></div>
+                <div data-field={key} key={"field:" + key} class="flex row">{options.prefix?.(props)}{props.prefix?.()}{base()}{options.suffix?.(props)}</div>
+            </>
         }
     }
 }))
@@ -190,7 +254,7 @@ export const StringFieldDrawer = defineComponent({
         ...getFieldDrawerProps(StringField)
     },
     setup(props, ctx) {
-        const value = useFieldDrawerValue(props)
+        const value = props.field.nullable ? useFieldDrawerValue(props, v => v == "" ? null : v) : useFieldDrawerValue(props)
 
         return () => (
             <TextField
@@ -209,57 +273,23 @@ export const NumberFieldDrawer = defineComponent({
     },
     setup(props, ctx) {
         const field = props.field
-
-        let value: { value: any }
-        let numberValue: Ref<string>
-        let changed: () => void
         const error = ref("")
 
-        if (field.min == null && field.max == null) {
-            const fieldValue = useFieldDrawerValue(props)
-            value = fieldValue
-            changed = fieldValue.changed
-            numberValue = numberModel(value, { integer: !!field.integer })
-        } else {
-            const fieldValue = useFieldDrawerValue(props)
-            value = fieldValue
+        const fieldValue = useFieldDrawerValue(props)
+        const numberValue = numberModel(fieldValue, { integer: !!field.integer, nullable: props.field.nullable ?? false })
 
-            const validator = (newValue: number) => {
-                if (field.min != null && newValue < field.min) {
-                    return "Value too small"
-                }
-
-                if (field.max != null && newValue > field.max) {
-                    return "Value too large"
-                }
-
-                return null
-            }
-
-            changed = () => {
-                if (validator(value.value) == null) {
-                    fieldValue.changed()
-                }
-            }
-
-            const watchedValue = computed({
-                get() {
-                    return value.value
-                },
-                set(newValue) {
-                    value.value = newValue
-                    error.value = validator(newValue) || ""
-                }
-            })
-
-            numberValue = numberModel(watchedValue, { integer: !!field.integer })
+        function changed() {
+            if (error.value) return
+            fieldValue.changed()
         }
 
         return () => (
             <TextField
-                error={error.value} type={field.integer ? "number" : undefined} class="flex-fill border rounded"
+                type={field.integer ? "number" : undefined} class="flex-fill border rounded"
                 vModel={numberValue.value} onChange={changed} clear
-                explicit={props.field.explicit ?? undefined}
+                min={field.min ?? undefined} max={field.max ?? undefined} validate
+                onErrorChanged={newError => error.value = newError}
+                explicit={props.field.explicit ?? undefined} required
             />
         )
     },
@@ -315,7 +345,7 @@ export const ObjectFieldDrawer = defineComponent({
     props: {
         ...getFieldDrawerProps(ObjectField)
     },
-    noFieldDecoration: true,
+    fullLine: true,
     setup(props, ctx) {
         const value = computed({
             get: () => props.binding.getValue(props.base),
@@ -327,9 +357,6 @@ export const ObjectFieldDrawer = defineComponent({
         const options = useFieldOptions()
 
         return () => <>
-            {props.label != "" && <>
-                <div data-field-label={key} class="flex row" key={"label0:" + key} style={grid().colspan(2).$}>{options.prefix?.(props)}{props.label}</div>
-            </>}
             <div data-field={key} class={["gap-1", props.label.length > 0 && "pl-2"]} key={"field1:" + key} style={grid().columns(options.labelWidth == "auto" ? "auto" : options.labelWidth + "px", "1fr").colspan(2).$}>
                 {props.field.properties.map(property => {
                     const { field, bind, label } = property
@@ -351,7 +378,7 @@ export const TableFieldDrawer = defineComponent({
     props: {
         ...getFieldDrawerProps(TableField)
     },
-    noFieldDecoration: true,
+    fullLine: true,
     setup(props, ctx) {
         const value = useFieldDrawerValue(props)
         const path = props.path
@@ -406,9 +433,6 @@ export const TableFieldDrawer = defineComponent({
         }
 
         return () => <>
-            {props.label != "" && <>
-                <div data-field-label={key} class="flex row" key={"label0:" + key} style={grid().colspan(2).$}>{options.prefix?.(props)}{props.label}</div>
-            </>}
             <table class="as-table w-fill" data-field={key} style={grid().colspan(2).$}>
                 <thead>
                     <tr>
@@ -476,18 +500,27 @@ export const InfoFieldDrawer = defineComponent({
 })
 registerFieldDrawer(InfoField, InfoFieldDrawer)
 
-export const NullableFieldDrawer = defineComponent({
+export const _NullableFieldDrawer = defineComponent({
     name: "NullableFieldDrawer",
     props: {
         ...getFieldDrawerProps(NullableField)
     },
     setup(props, ctx) {
         const value = useFieldDrawerValue(props)
+        const options = useFieldOptions()
         const checked = ref(value.value != null)
 
-        watch(checked, checked => {
-            if (checked) {
-                value.value = props.field.defaultValue
+        watch(checked, () => {
+            if (checked.value) {
+                const instance = options.instantiate?.(new FieldInstantiationEvent(props.path, options.basePath, props.field.typeName))
+
+                if (instance == undefined) {
+                    nextTick(() => checked.value = false)
+                    // eslint-disable-next-line no-console
+                    console.warn("Nullable field " + JSON.stringify(props.path.toArray()) + " instantiation event was not resolved")
+                } else {
+                    value.value = instance
+                }
             } else {
                 value.value = null
             }
@@ -503,5 +536,37 @@ export const NullableFieldDrawer = defineComponent({
             )
         )
     },
+})
+export const NullableFieldDrawer = new FieldDrawerDecorator<NullableField>("Nullable", (props) => {
+    const value = useFieldDrawerValue(props)
+    const options = useFieldOptions()
+    const checked = ref(value.value != null)
+    const baseField = props.field.base
+
+    const result: FieldDrawerDecorator.Result = reactive({
+        prefix: () => <input type="checkbox" checked={checked.value} onChange={e => checked.value = (e.target as HTMLInputElement).checked} />,
+        field: null,
+        placeholder: () => [""]
+    })
+
+    watch(checked, () => {
+        if (checked.value) {
+            const instance = options.instantiate?.(new FieldInstantiationEvent(props.path, options.basePath, props.field.typeName))
+
+            if (instance == undefined) {
+                nextTick(() => checked.value = false)
+                // eslint-disable-next-line no-console
+                console.warn("Nullable field " + JSON.stringify(props.path.toArray()) + " instantiation event was not resolved")
+                return
+            }
+            value.value = instance
+            result.field = baseField
+        } else {
+            value.value = null
+            result.field = null
+        }
+    }, { immediate: true })
+
+    return result
 })
 registerFieldDrawer(NullableField, NullableFieldDrawer)

@@ -33,6 +33,10 @@ export function useForm<T>(options: ValueFormOptions<T>) {
     const value = isRef(options.value) ? options.value : ref(options.value)
     let form = options.form ?? Form.getForm(options.type ?? Struct.getType(value.value as any))
     let binding: Binding = options.path == null ? new ObjectPropertyBinding({ property: "value" }) : new DeepObjectPropertyBinding({ path: ["value", ...options.path] })
+    let path = ImmutableList.empty<string>()
+    if (options.path != null) {
+        path = ImmutableList.from(options.path).concat(path)
+    }
 
     if (options.valueLabel != null || !(form.root instanceof ObjectField || form.root instanceof TableField)) {
         const oldRoot = form.root
@@ -49,8 +53,7 @@ export function useForm<T>(options: ValueFormOptions<T>) {
         binding = new RootBinding()
     }
 
-    const fieldOptions = { ...options.fieldOptions }
-    fieldOptions.basePath = fieldOptions.basePath ? ["value", ...fieldOptions.basePath] : ["value"]
+    const fieldOptions = options.fieldOptions ?? {}
 
     const formDef = reactive({
         value: value,
@@ -58,7 +61,7 @@ export function useForm<T>(options: ValueFormOptions<T>) {
             return (
                 <div>
                     <FieldGroup options={fieldOptions}>
-                        <FieldDrawer field={form.root} binding={binding} base={value} label="" path={new ImmutableList("value")} />
+                        <FieldDrawer field={form.root} binding={binding} base={value} label="" path={path} />
                     </FieldGroup>
                 </div>
             )

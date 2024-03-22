@@ -246,6 +246,10 @@ function table() {
 }
 
 function reference() {
+    class Dummy extends Struct.define("Dummy", {
+        name: Type.string
+    }) { }
+
     const Sample_t = Type.object({
         string: Type.string,
         // Using an explicit field, all changes are atomic and cancellable
@@ -266,7 +270,7 @@ function reference() {
             )
         ),
         boolean: Type.boolean,
-        nullable: Type.string.as(Type.nullable)
+        nullable: Dummy.ref().as(Type.nullable)
     })
 
     return defineComponent({
@@ -276,7 +280,14 @@ function reference() {
 
             const form = useForm({
                 value: person,
-                type: Sample_t
+                type: Sample_t,
+                fieldOptions: {
+                    instantiate(event) {
+                        if (event.type == "Dummy") {
+                            return Dummy.default()
+                        }
+                    }
+                }
             })
 
             return () => (
