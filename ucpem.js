@@ -16,6 +16,10 @@ project.prefix("src").res("formBuilder",
     github("bt7s7k7/Vue3GUI").res("vue3gui"),
 )
 
+project.prefix("src").res("editor",
+    github("bt7s7k7/Vue3GUI").res("vue3gui"),
+)
+
 /** @typedef {{ name: string, version: string, devDependencies: Record<string, string>, dependencies: Record<string, string> } & Record<string, any>} PackageJson */
 /** @typedef {{ compilerOptions: any, include?: string[], exclude?: string[] }} TSConfig */
 
