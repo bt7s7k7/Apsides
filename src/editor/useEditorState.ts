@@ -1,29 +1,38 @@
-import { reactive, shallowReactive } from "vue"
+import { reactive, shallowReactive, shallowRef } from "vue"
 import { escapeHTML } from "../comTypes/util"
 import { stringifyError } from "../vue3gui/util"
 
-export type EditorState = ReturnType<typeof useEditorState>
+export abstract class EditorState {
+    public readonly code = shallowRef("")
 
-export function useEditorState(callback: (code: string) => void) {
-    return shallowReactive({
-        errors: [] as string[],
-        ast: null as string | null,
-        loaded: null as string | null,
-        result: reactive([]) as string[],
-        ready: false,
-        compile(code: string) {
-            this.errors = []
-            this.ast = null
-            this.loaded = null
-            this.result.length = 0
+    public readonly errors: string[] = reactive([])
+    public ready = false
+    public abstract getOutput(): EditorState.OutputTab[]
 
-            try {
-                callback(code)
-            } catch (err) {
-                // eslint-disable-next-line no-console
-                console.error(err)
-                this.errors.push(`<span class="text-danger">Failed to run code due to internal error:<br />&nbsp;&nbsp;${escapeHTML(stringifyError(err))}</span>`)
-            }
+    public compile(code: string) {
+        this.ready = false
+        this.errors.length = 0
+
+        try {
+            this._compile(code)
+        } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error(err)
+            this.errors.push(`<span class="text-danger">Failed to run code due to internal error:<br />&nbsp;&nbsp;${escapeHTML(stringifyError(err))}</span>`)
         }
-    })
+    }
+
+    protected abstract _compile(code: string): void
+
+    constructor() {
+        return shallowReactive(this)
+    }
+}
+
+export namespace EditorState {
+    export interface OutputTab {
+        name: string
+        label: string
+        content: string | (() => any)
+    }
 }

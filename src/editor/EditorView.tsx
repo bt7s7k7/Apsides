@@ -8,7 +8,7 @@ import { Icon } from "../vue3gui/Icon"
 import { Tab, TabbedContainer, Tabs, useTabs } from "../vue3gui/Tabs"
 import { useResizeWatcher } from "../vue3gui/util"
 import { Editor, EditorHighlightOptions } from "./Editor"
-import { EditorState, useEditorState } from "./useEditorState"
+import { EditorState } from "./useEditorState"
 
 export const EditorView = eventDecorator(defineComponent({
     name: "EditorView",
@@ -18,11 +18,9 @@ export const EditorView = eventDecorator(defineComponent({
         tab: { type: String },
         mode: { type: String },
         localStorageId: { type: String },
-        noLoad: { type: Boolean },
-        noAST: { type: Boolean },
-        customOutput: { type: null as unknown as PropType<() => any> },
         config: { type: Object as PropType<EditorConfiguration> },
-        codeRatio: { type: Number }
+        codeRatio: { type: Number },
+        state: { type: EditorState as PropType<EditorState>, required: true }
     },
     emits: {
         compile: (state: EditorState, code: string) => true
@@ -36,10 +34,9 @@ export const EditorView = eventDecorator(defineComponent({
             console.warn("EditorView has localStorageId but it is not root, so no state will be saved")
         }
 
-        const code = ref("")
         watch(() => props.code, () => {
             if (props.code != null) {
-                code.value = props.code
+                props.state.code.value = props.code
             }
         }, { immediate: true })
 
@@ -56,13 +53,13 @@ export const EditorView = eventDecorator(defineComponent({
         if (props.root) {
             if (route.query.code) {
                 const queryCode = route.query.code as string
-                code.value = queryCode
+                props.state.code.value = queryCode
 
                 router.replace({ query: { code: undefined } })
             } else if (props.localStorageId != null) {
                 const savedCode = localStorage.getItem(props.localStorageId + ":editor-code")
                 if (savedCode != null) {
-                    code.value = savedCode
+                    props.state.code.value = savedCode
                 }
             }
 
@@ -70,16 +67,15 @@ export const EditorView = eventDecorator(defineComponent({
                 const savedTab = localStorage.getItem(props.localStorageId + ":editor-tab")
                 if (savedTab != null) outputView.selected = savedTab as any
 
-                watch(code, code => localStorage.setItem(props.localStorageId + ":editor-code", code))
+                watch(props.state.code, code => localStorage.setItem(props.localStorageId + ":editor-code", code))
                 watch(() => outputView.selected, tab => localStorage.setItem(props.localStorageId + ":editor-tab", tab!))
             }
         }
 
-        const state = useEditorState((code) => ctx.emit("compile", state, code))
         function runCode() {
-            state.compile(code.value)
+            props.state.compile(props.state.code.value)
         }
-        watch(code, runCode, { immediate: true })
+        watch(props.state.code, runCode, { immediate: true })
 
         const outputPanel = ref<HTMLDivElement>()
         const isSmallMode = ref(false)
@@ -93,7 +89,7 @@ export const EditorView = eventDecorator(defineComponent({
         function errorPanel() {
             return (
                 <div class="absolute-fill flex column gap-2 scroll p-2">
-                    {state.errors.map(err => (
+                    {props.state.errors.map(err => (
                         <div class="border border-danger rounded pre-wrap monospace px-2" innerHTML={err} />
                     ))}
                 </div>
@@ -138,8 +134,8 @@ export const EditorView = eventDecorator(defineComponent({
                 <div class="flex row flex-fill">
                     <div class="flex-fill border-right" style={{ flexGrow: props.codeRatio }}>
                         <Editor
-                            content={code.value}
-                            onChange={v => code.value = v}
+                            content={props.state.code.value}
+                            onChange={v => props.state.code.value = v}
                             class="absolute-fill"
                             highlight={highlighting.value}
                             mode={props.mode}
@@ -148,43 +144,27 @@ export const EditorView = eventDecorator(defineComponent({
                     </div>
                     <div class="flex-fill flex column" ref={outputPanel}>
                         <TabbedContainer class="flex-fill" externalTabs={outputView} onMousemove={handlePositionHighlight} onMouseleave={handlePositionHighlight}>
-                            <Tab name="output" label="Output">
-                                <div class="absolute-fill scroll p-2">
-                                    {props.customOutput ? (
-                                        props.customOutput()
-                                    ) : state.ready ? (
-                                        state.result.map(v => <div class="monospace pre-wrap" innerHTML={v} />)
-                                    ) : (
-                                        <div class="muted p-2">Waiting for compilation...</div>
-                                    )}
-                                </div>
-                            </Tab>
-
-                            {!props.noAST && <Tab name="ast" label="AST">
-                                <div class="absolute-fill scroll p-2">
-                                    {state.ast ? (
-                                        <div class="monospace pre-wrap" innerHTML={state.ast} />
-                                    ) : (
-                                        <div class="muted p-2">Waiting for compilation...</div>
-                                    )}
-                                </div>
-                            </Tab>}
-
-                            {!props.noLoad && <Tab name="load" label="Load">
-                                <div class="absolute-fill scroll p-2">
-                                    {state.loaded ? (
-                                        <div class="monospace pre-wrap" innerHTML={state.loaded} />
-                                    ) : (
-                                        <div class="muted p-2">Waiting for compilation...</div>
-                                    )}
-                                </div>
-                            </Tab>}
+                            {props.state.getOutput().map(tab => (
+                                <Tab name={tab.name} key={tab.name} label={tab.label}>
+                                    <div class="absolute-fill scroll p-2">
+                                        {props.state.ready ? (
+                                            typeof tab.content == "string" ? (
+                                                <div class="monospace pre-wrap" innerHTML={tab.content} />
+                                            ) : (
+                                                tab.content()
+                                            )
+                                        ) : (
+                                            <div class="muted p-2">Waiting for compilation...</div>
+                                        )}
+                                    </div>
+                                </Tab>
+                            ))}
 
                             {isSmallMode.value && <Tab name="errors" label="Errors">
                                 {errorPanel()}
                             </Tab>}
                         </TabbedContainer>
-                        {isSmallMode.value == false && state.errors.length > 0 && (
+                        {isSmallMode.value == false && props.state.errors.length > 0 && (
                             <div class="flex-basis-300 border-top" onMousemove={handlePositionHighlight} onMouseleave={handlePositionHighlight}>
                                 {errorPanel()}
                             </div>

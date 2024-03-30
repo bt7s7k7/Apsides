@@ -1,8 +1,8 @@
 import { mdiCircleOutline, mdiCog, mdiDelete, mdiFileOutline, mdiPlus } from "@mdi/js"
 import "codemirror/mode/jsx/jsx.js"
-import { computed, defineComponent, h, onMounted, reactive, ref, shallowRef, watch } from "vue"
+import { Ref, computed, defineComponent, h, onMounted, reactive, ref, shallowRef, toRef, watch } from "vue"
 import { GenericParser } from "../comTypes/GenericParser"
-import { escapeHTML, isUpperCase, isWhitespace, isWord, runString, unreachable } from "../comTypes/util"
+import { isUpperCase, isWhitespace, isWord, runString, unreachable } from "../comTypes/util"
 import { EditorView } from "../editor/EditorView"
 import { EditorState } from "../editor/useEditorState"
 import * as api from "../index"
@@ -185,10 +185,44 @@ function _transpileJSX(source: string) {
     return parseExpression(source)
 }
 
+class ComponentEditorState extends EditorState {
+    protected _component = null as any
+
+    public getOutput(): EditorState.OutputTab[] {
+        return [
+            {
+                name: "output", label: "Output",
+                content: () => (
+                    this._component && <this._component />
+                )
+            }
+        ]
+    }
+
+    protected _compile(code: string): void {
+        this.ready = true
+        this._component = null
+
+        const transpiledSource = _transpileJSX(code)
+
+        const result = runString({
+            source: transpiledSource, env: _ENV,
+            url: "generated:component-editor/" + this._name.value
+        })
+
+        this._component = result
+    }
+
+    constructor(
+        protected readonly _name: Ref<string>
+    ) { super() }
+
+}
+
 export const ComponentEditor = (defineComponent({
     name: "ComponentEditor",
     props: {
-        name: { type: String, require: true },
+        name: { type: String, required: true },
         code: { type: String },
         large: { type: Boolean }
     },
@@ -210,41 +244,16 @@ export const ComponentEditor = (defineComponent({
             observer.observe(placeholder.value!)
         })
 
-
-        function customOutput() {
-            return component.value && <component.value />
-        }
-
-        function compile(state: EditorState, code: string) {
-            state.ready = true
-            component.value = null
-
-            try {
-                const transpiledSource = _transpileJSX(code)
-
-                const result = runString({
-                    source: transpiledSource, env: _ENV,
-                    url: "generated:component-editor/" + props.name
-                })
-
-                component.value = result
-            } catch (err: any) {
-                state.errors.push(`<span class="text-danger">${escapeHTML(err.stack)}</span>`)
-                // eslint-disable-next-line no-console
-                console.error(err)
-            }
-        }
+        const state = new ComponentEditorState(toRef(props, "name"))
 
         return () => <>
             {mount.value ? (
                 <EditorView
                     class={["-insert border rounded overflow-hidden", props.large ? "h-500" : "h-300"]}
                     code={props.code} mode="jsx"
-                    noAST noLoad
-                    onCompile={compile}
-                    customOutput={customOutput}
                     config={{ lineWrapping: false }}
                     codeRatio={1.25}
+                    state={state}
                 />
             ) : (
                 <div class={["-insert border rounded", props.large ? "h-500" : "h-300"]} ref={placeholder}></div>
