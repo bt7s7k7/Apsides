@@ -2,9 +2,10 @@ import { EditorConfiguration, EditorFromTextArea, KeyMap, TextMarker, fromTextAr
 import "codemirror/addon/mode/simple.js"
 import "codemirror/lib/codemirror.css"
 import { PropType, defineComponent, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { eventDecorator } from "../eventDecorator"
 
 export type EditorHighlightOptions = { offset: number, length: number, lineOffset?: number }
-export const Editor = (defineComponent({
+export const Editor = eventDecorator(defineComponent({
     name: "Editor",
     props: {
         content: { type: String, default: "" },
