@@ -40,7 +40,9 @@ export const Editor = eventDecorator(defineComponent({
                 },
             })
 
-            editor.getWrapperElement().classList.add("absolute-fill")
+            const wrapper = editor.getWrapperElement()
+            wrapper.classList.add("absolute-fill")
+            wrapper.style.height = "100%"
 
             editor.on("change", () => {
                 value = editor!.getValue()
