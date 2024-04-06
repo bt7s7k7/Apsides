@@ -1,8 +1,9 @@
-import { EditorConfiguration, EditorFromTextArea, KeyMap, TextMarker, fromTextArea } from "codemirror"
+import CodeMirror, { EditorConfiguration, Editor as Editor_1, KeyMap, TextMarker } from "codemirror"
 import "codemirror/addon/mode/simple.js"
 import "codemirror/lib/codemirror.css"
-import { PropType, defineComponent, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { PropType, defineComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { eventDecorator } from "../eventDecorator"
+import { MountNode } from "../vue3gui/MountNode"
 
 export type EditorHighlightOptions = { offset: number, length: number, lineOffset?: number }
 export const Editor = eventDecorator(defineComponent({
@@ -17,8 +18,8 @@ export const Editor = eventDecorator(defineComponent({
         change: (value: string) => true
     },
     setup(props, ctx) {
-        const textarea = ref<HTMLTextAreaElement>()
-        let editor: EditorFromTextArea | null = null
+        const editorHost = ref<HTMLElement>()
+        let editor: Editor_1 | null = null
         let value = props.content
 
         watch(() => props.content, newValue => {
@@ -26,9 +27,15 @@ export const Editor = eventDecorator(defineComponent({
             if (newValue != editor.getValue()) editor.setValue(newValue)
         })
 
+        function mountEditorHost(host: HTMLElement) {
+            host.classList.add("absolute-fill")
+            host.style.height = "100%"
+            editorHost.value = host
+        }
+
         onMounted(() => {
-            textarea.value!.value = props.content
-            editor = fromTextArea(textarea.value!, {
+            editor = CodeMirror(mountEditorHost, {
+                value: value,
                 lineNumbers: true,
                 mode: props.mode ?? "simple",
                 lineWrapping: true,
@@ -40,9 +47,7 @@ export const Editor = eventDecorator(defineComponent({
                 },
             })
 
-            const wrapper = editor.getWrapperElement()
-            wrapper.classList.add("absolute-fill")
-            wrapper.style.height = "100%"
+            nextTick(() => editor!.refresh())
 
             editor.on("change", () => {
                 value = editor!.getValue()
@@ -84,7 +89,7 @@ export const Editor = eventDecorator(defineComponent({
 
         return () => (
             <div>
-                <textarea ref={textarea} value="" />
+                <MountNode node={editorHost.value} />
             </div>
         )
     }
