@@ -146,7 +146,7 @@ export const EditorView = eventDecorator(defineComponent({
                         <TabbedContainer class="flex-fill" externalTabs={outputView} onMousemove={handlePositionHighlight} onMouseleave={handlePositionHighlight}>
                             {props.state.getOutput().map(tab => (
                                 <Tab name={tab.name} key={tab.name} label={tab.label}>
-                                    <div class="absolute-fill scroll p-2">
+                                    <div class="absolute-fill overflow-auto p-2">
                                         {props.state.ready ? (
                                             typeof tab.content == "string" ? (
                                                 <div class="monospace pre-wrap" innerHTML={tab.content} />
