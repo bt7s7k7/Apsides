@@ -203,6 +203,8 @@ project.script("build-package", async ([packageName]) => {
 
     await writeFile(join(outFolder, "README.md"), readme.toString())
 
+    await copy(join(constants.projectPath, "LICENSE.md"), join(outFolder, "LICENSE.md"))
+
     await package.callback?.(typesFolder, outFolder)
 }, { desc: "Builds a package :: Arguments: <name>", argc: 1 })
 
