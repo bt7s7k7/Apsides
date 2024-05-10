@@ -64,8 +64,8 @@ export namespace Form {
         }
 
         const tableAttr = metadata?.get(TableAttribute)
-        if ((Type.isArray(type) || Type.isMap(type) || Type.isRecord(type)) && tableAttr) {
-            const elementType = type.type
+        if ((Type.isArray(type) || Type.isMap(type)) && tableAttr) {
+            const elementType = Type.isArray(type) ? type.elementType : type.valueType
             const showIndex = tableAttr.showIndex
 
             let properties: PropertyInfo[]

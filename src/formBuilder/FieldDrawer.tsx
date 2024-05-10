@@ -74,13 +74,12 @@ export abstract class FieldEvent {
         return this._cachedPathArray as readonly string[]
     }
 
-    public isPath(test: Mutation.TypedPath) {
-        const otherPath = Mutation.getPath(test)
+    public isPath(testPath: string[]) {
         const currPath = this.getPath()
 
-        if (otherPath.length != currPath.length) return false
+        if (testPath.length != currPath.length) return false
         for (let i = 0; i < currPath.length; i++) {
-            if (currPath[i] != otherPath[i]) return false
+            if (currPath[i] != testPath[i]) return false
         }
 
         return true
@@ -96,7 +95,7 @@ export class FieldChangeEvent extends FieldEvent {
     public getMutation() {
         const path = this.getPath().slice(0, -1)
         const key = this.getPath().at(-1) ?? unreachable()
-        return new Mutation.AssignMutation({ type: "mut_assign", key, path, value: this.value }).setLocal()
+        return new Mutation.AssignMutation({ key, path, value: this.value })
     }
 
     constructor(
