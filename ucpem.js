@@ -18,6 +18,7 @@ project.prefix("src").res("formBuilder",
 
 project.prefix("src").res("editor",
     github("bt7s7k7/Vue3GUI").res("vue3gui"),
+    github("bt7s7k7/CommonTypes").res("comTypes"),
 )
 
 /** @typedef {{ name: string, version: string, devDependencies: Record<string, string>, dependencies: Record<string, string> } & Record<string, any>} PackageJson */
