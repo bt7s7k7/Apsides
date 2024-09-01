@@ -18,6 +18,9 @@ const services = new ServiceLoader()
     .load()
 
 const logger = services.get(Logger.kind)
+logger.info`Starting ${{
+    mode: import.meta.env.MODE
+}}`
 
 const serverScope = services.makeTransientLoader()
     .add(RpcServer)
@@ -27,17 +30,13 @@ const serverScope = services.makeTransientLoader()
 await serverScope.get(AsyncInitializationQueue.kind).awaitAll()
 
 async function createConnection(messageTransport: MessageTransport) {
-    const sessionScope = serverScope.makeTransientLoader()
+    using sessionScope = serverScope.makeTransientLoader()
         .add(RpcSession)
         .provide(MessageTransport.kind, messageTransport)
         .load()
 
-    try {
-        await messageTransport.onClose.asPromise(null)
-        logger.info`Server detected disconnect`
-    } finally {
-        sessionScope[Symbol.dispose]()
-    }
+    await messageTransport.onClose.asPromise(null)
+    logger.info`Server detected disconnect`
 }
 
 const clientScope = services.makeTransientLoader()

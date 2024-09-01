@@ -19,7 +19,7 @@
     "scripts": {
         "frontend-dev": "concurrently --raw --kill-others \"vite\" \"tsc --noEmit --watch --incremental --preserveWatchOutput\"",
         "frontend-build": "vite build",
-        "backend-dev": "node --inspect runner.mjs",
+        "backend-dev": "ucpem run watch-backend",
         "backend-build": "ucpem run build-backend",
         "build": "tsc --noEmit --incremental && yarn frontend-build && yarn backend-build",
         "serve": "vite preview",
