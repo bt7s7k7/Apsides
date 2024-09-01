@@ -15,10 +15,10 @@ export default defineConfig(() => {
             preserveSymlinks: true
         },
         server: {
-            port: +(process.env.PORT ?? 8080),
-            /* proxy: {
-                "^/api": { target: process.env.BACKEND_URL, changeOrigin: true },
-            } */
+            port: +(process.env.DEV_PORT ?? 8080),
+            proxy: {
+                "^/api": { target: process.env.BACKEND_URL, changeOrigin: true, ws: true },
+            }
         }
     }
 })
