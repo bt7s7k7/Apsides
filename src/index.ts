@@ -1,62 +1,43 @@
-import { delayedPromise } from "./comTypes/util"
+import { serveStatic } from "@hono/node-server/serve-static"
 import { Logger } from "./foundation/logger/Logger"
 import { TerminalLogger } from "./foundation/logger/TerminalLogger"
-import { DebugMessageTransport } from "./foundation/messaging/DebugMessageTransport"
-import { MessageTransport } from "./foundation/messaging/MessageTransport"
+import { HonoServer } from "./honoService/HonoServer"
 import { AsyncInitializationQueue } from "./serviceProvider/AsyncInitializationQueue"
 import { ServiceLoader } from "./serviceProvider/ServiceLoader"
-import { RpcClient } from "./structRpc/architecture/RpcClient"
+import { SocketIOServer } from "./socketIOTransport/SocketIOServer"
 import { RpcServer } from "./structRpc/architecture/RpcServer"
 import { RpcSession } from "./structRpc/architecture/RpcSession"
-import { TodoList, TodoListProxy } from "./todoExample/TodoList"
-import { TodoManagerController, TodoManagerProxy } from "./todoExample/TodoManager"
+import { ENV } from "./todoExample/ENV"
+import { TodoManagerController } from "./todoExample/todoManager/TodoManagerController"
 
-const [serverTransport, clientTransport] = DebugMessageTransport.makePair()
-
-const services = new ServiceLoader()
-    .add(TerminalLogger)
-    .load()
-
-const logger = services.get(Logger.kind)
+const logger = new TerminalLogger()
 logger.info`Starting ${{
     mode: import.meta.env.MODE
 }}`
 
-const serverScope = services.makeTransientLoader()
+const scope = new ServiceLoader()
+    .provide(Logger.kind, logger)
+    .add(HonoServer.make({
+        serve: { port: +ENV.PORT }
+    }))
+    .add(SocketIOServer.make(async (connection) => {
+        logger.info`Connection from ${connection.raw.conn.remoteAddress}`
+        using services = connection.makeServiceLoader()
+            .add(RpcSession)
+            .load()
+
+        await connection.onClose.asPromise()
+        logger.info`Disconnected from ${connection.raw.conn.remoteAddress}`
+    }))
     .add(RpcServer)
     .add(TodoManagerController)
     .load()
 
-await serverScope.get(AsyncInitializationQueue.kind).awaitAll()
+const { app } = scope.get(HonoServer.kind)
+app.get('/*', serveStatic({
+    root: './dist'
+}))
 
-async function createConnection(messageTransport: MessageTransport) {
-    using sessionScope = serverScope.makeTransientLoader()
-        .add(RpcSession)
-        .provide(MessageTransport.kind, messageTransport)
-        .load()
+await scope.tryGet(AsyncInitializationQueue.kind)?.awaitAll()
 
-    await messageTransport.onClose.asPromise(null)
-    logger.info`Server detected disconnect`
-}
-
-const clientScope = services.makeTransientLoader()
-    .add(RpcClient)
-    .provide(MessageTransport.kind, clientTransport)
-    .load()
-
-createConnection(serverTransport)
-
-void async function () {
-    logger.info`Starting test`
-    const client = clientScope.get(RpcClient.kind)
-    const todoManger = client.getEmptyProxy(TodoManagerProxy)
-    const listId = await todoManger.createList({ label: "New List" })
-    logger.info`Step 0: ${listId}`
-    const list = await client.getBoundProxy(TodoListProxy, listId)
-    logger.info`Step 1: ${TodoList.baseType.clone(list)}`
-    await list.setLabel("Label 2")
-    logger.info`Step 2: ${TodoList.baseType.clone(list)}`
-    await delayedPromise(100)
-    clientScope[Symbol.dispose]()
-    logger.info`Client disconnected`
-}()
+logger.info`Ready.`

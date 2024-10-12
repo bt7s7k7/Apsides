@@ -1,7 +1,7 @@
 import { AUTO_DISPOSE, Disposable } from "./Disposable"
 import { DISPOSABLE_HANDLE, DisposableHandle, DisposableUser } from "./DisposableHandle"
 
-export class EventEmitter<T> extends Disposable implements DisposableUser {
+export class EventEmitter<T = void> extends Disposable implements DisposableUser {
     public readonly [AUTO_DISPOSE] = true
 
     protected readonly _listeners = new Map<number, EventEmitter.Listener<T>>
@@ -31,7 +31,7 @@ export class EventEmitter<T> extends Disposable implements DisposableUser {
         return id as EventEmitter.EventBinding
     }
 
-    public asPromise(handle: EventEmitter.Handle<Disposable>) {
+    public asPromise(handle: EventEmitter.Handle<Disposable> = null) {
         return new Promise((resolve) => this.add(handle, resolve, { once: true }))
     }
 

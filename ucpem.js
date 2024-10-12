@@ -41,6 +41,7 @@ async function buildBackend(/** @type {boolean} */ isDev) {
     if (isDev) {
         const watcher = await context(options)
         await watcher.watch()
+        return
     }
 
     await build(options)
@@ -69,7 +70,8 @@ project.script("build-backend", async () => {
 
 }, { desc: "Builds and bundles backend code" })
 
-project.script("watch-backend", async () => {
+async function watchBackend() {
+
     await buildBackend(true)
 
     /** @type {import("child_process").ChildProcess | null} */
@@ -112,4 +114,13 @@ project.script("watch-backend", async () => {
     tsc.stderr.addListener("data", (chunk) => {
         process.stderr.write(chunk)
     })
+}
+
+project.script("watch-backend", async () => {
+    watchBackend()
+}, { desc: "Builds backend code in dev mode and watches for changes" })
+
+project.script("dev", async () => {
+    run("yarn vite")
+    await watchBackend()
 }, { desc: "Builds backend code in dev mode and watches for changes" })

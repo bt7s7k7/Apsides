@@ -14,6 +14,8 @@ export class ClientError extends Error {
     }
 }
 
+export const ERR_SERVER_ERROR = "ERR_SERVER_ERROR"
+
 export class TransportError extends Error {
     override name = "TransportError"
 }
