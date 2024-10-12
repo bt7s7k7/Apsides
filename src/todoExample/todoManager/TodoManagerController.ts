@@ -30,7 +30,7 @@ export class TodoManagerController extends TodoManagerApi.makeController() {
                 this.rpcServer.registerController(list)
                 this.onListChanged.emit(list.id)
 
-                return list.id
+                return list
             },
             async getLists() {
                 return [...this._lists.values()].map(v => ({ id: v.id, label: v.label }))

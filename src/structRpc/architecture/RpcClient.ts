@@ -27,18 +27,28 @@ export class RpcClient extends EventListener {
         return instance
     }
 
-    protected _call(type: string, id: string | null, bindingId: number | null, action: string, argument: DeferredSerializationValue) {
+    protected _call(type: string, id: string | null, bindingId: number | null, action: string, argument: DeferredSerializationValue, options?: Api.CallOptions) {
         if (bindingId == null) {
             return this._sendRequest(new RpcMessage.ToServer.Call({
                 kind: "call",
-                action, argument, id, type
+                action, argument, id, type,
+                bindResult: options?.bindResult != null
             }))
         } else {
             return this._sendRequest(new RpcMessage.ToServer.CallBound({
                 kind: "callBound",
-                action, argument, bindingId
+                action, argument, bindingId,
+                bindResult: options?.bindResult != null
             }))
         }
+    }
+
+    protected _createProxyFromResult(type: typeof Api.Proxy, result: any, bindingId: number) {
+        const instance = new type(this, result.id)
+        Object.assign(instance, result)
+        instance["_rpcBindingId"] = bindingId
+        this._boundProxies.set(bindingId, instance)
+        return instance
     }
 
     protected async _bind(instance: Api.Proxy, type: string, id: string | null) {

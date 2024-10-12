@@ -13,12 +13,13 @@ import { RpcClient } from "../architecture/RpcClient"
 import { RpcMessage } from "../architecture/RpcMessage"
 import { RpcServer } from "../architecture/RpcServer"
 import { ApiConsistencyError, ERR_INVALID_ACTION } from "../errors"
+import { bindRpcResult } from "./BindResultAttribute"
 
 export class Api<T extends Struct.StructStatics, TApi extends Api._ApiConstraint> {
     protected readonly _actions: Api.ActionType<Type, Type>[] = []
     protected readonly _events: Api.EventType<Type>[] = []
 
-    public makeProxy(): new (...args: ConstructorParameters<typeof Api.Proxy>) => Api._ProxyInstance<T, TApi> {
+    public makeProxy(): { new(...args: ConstructorParameters<typeof Api.Proxy>): Api._ProxyInstance<T, TApi>, verifyModel: typeof Api.Proxy["verifyModel"] } {
         const proxyBase = this.model as unknown as new (...args: any[]) => Api.Proxy
 
         const events = this._events
@@ -72,6 +73,10 @@ export class Api<T extends Struct.StructStatics, TApi extends Api._ApiConstraint
                 }
             }
 
+            public static verifyModel(value: unknown): boolean {
+                return typeof value == "object" && value != null && value instanceof proxyBase
+            }
+
             constructor(
                 public override readonly rpcClient: RpcClient,
                 public override id: string | null = null
@@ -87,10 +92,19 @@ export class Api<T extends Struct.StructStatics, TApi extends Api._ApiConstraint
         }
 
         for (const action of this._actions) {
-            (_ApiProxy.prototype as any)[action.name] = async function (this: _ApiProxy, argument: any) {
+            (_ApiProxy.prototype as any)[action.name] = async function (this: _ApiProxy, argument: any, options?: Api.CallOptions) {
                 const argumentData = DeferredSerializationValue.prepareSerialization(argument, action.param)
-                const resultData = await this.rpcClient["_call"](typeName, this.id, this._rpcBindingId, action.name, argumentData)
+                const resultData = await this.rpcClient["_call"](typeName, this.id, this._rpcBindingId, action.name, argumentData, options)
                 const result = resultData.value.getValue(action.result)
+
+                if (options?.bindResult) {
+                    if (resultData.bindingIds == null) {
+                        throw new ApiConsistencyError(`Call to ${typeName}.${action.name} had bindResult enabled but the server did not return bindingIDs`)
+                    }
+
+                    return bindRpcResult(result, this.rpcClient, options.bindResult, resultData.bindingIds)
+                }
+
                 return result
             }
         }
@@ -195,9 +209,26 @@ export namespace Api {
 
     export type _ApiConstraint = Record<string, Api.ActionType<Type, Type> | Api.EventType<Type>>
 
+    export interface CallOptions {
+        bindResult?: typeof Api.Proxy | null
+    }
+
+    export type _UnwrapBoundResult<TResult, T> = T extends TResult ? (
+        T
+    ) : T[] extends TResult ? (
+        TResult[]
+    ) : Map<string, T> extends TResult ? (
+        Map<string, TResult>
+    ) : never
+
+    export interface _ActionMethod<TParam, TResult> {
+        <T extends Api.Proxy>(param: TParam, options: { bindResult: Constructor<T> }): Promise<_UnwrapBoundResult<TResult, T>>
+        (param: TParam): Promise<TResult>
+    }
+
     export type _ProxyProps<T extends _ApiConstraint> = {
         readonly [P in keyof T]: T[P] extends ActionType<infer TParam, infer TResult> ? (
-            (param: Type.Extract<TParam>) => Promise<Type.Extract<TResult>>
+            _ActionMethod<Type.Extract<TParam>, Type.Extract<TResult>>
         ) : T[P] extends EventType<infer T> ? (
             EventEmitter<Type.Extract<T>>
         ) : never
@@ -225,7 +256,7 @@ export namespace Api {
         init(model: InstanceType<T>): Promise<void>
     }
 
-    /** Base class for all API proxies. Do not construct or take a reference to this class, treat it as an interface only. */
+    /** Base class for all API proxies. Do not construct or take a reference to this class, treat it as an interface only. Use {@link Api.isProxy} to verify types. */
     export declare class Proxy implements EventListener {
         protected _rpcBindingId: number | null
         public readonly rpcClient: RpcClient
@@ -244,10 +275,16 @@ export namespace Api {
         protected _handleEvent(event: RpcMessage.ToClient.Event): void
         protected _handleNotification(event: RpcMessage.ToClient.Notify): void
 
+        public static verifyModel(value: unknown): boolean
+
         constructor(client: RpcClient, id: string | null)
     }
 
-    /** Base class for all API controllers. Do not construct or take a reference to this class, treat it as an interface only. */
+    export function isProxy(value: unknown): value is Proxy {
+        return typeof value == "object" && value != null && "rpcClient" in value && "_rpcBindingId" in value
+    }
+
+    /** Base class for all API controllers. Do not construct or take a reference to this class, treat it as an interface only. Use `{@link Api.isController}` to verify types. */
     export declare class Controller implements EventListener {
         public readonly rpcServer: RpcServer
         public readonly id: string | null
@@ -262,6 +299,10 @@ export namespace Api {
         protected _handleCall(action: string, argument: DeferredSerializationValue): Promise<DeferredSerializationValue>
 
         constructor(server: RpcServer, id: string | null)
+    }
+
+    export function isController(value: unknown): value is Controller {
+        return typeof value == "object" && value != null && "rpcServer" in value && "globalId" in value
     }
 
     export class ActionType<TParam extends Type, TResult extends Type> {

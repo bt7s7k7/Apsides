@@ -11,9 +11,7 @@ import { ENV } from "./todoExample/ENV"
 import { TodoManagerController } from "./todoExample/todoManager/TodoManagerController"
 
 const logger = new TerminalLogger()
-logger.info`Starting ${{
-    mode: import.meta.env.MODE
-}}`
+logger.info`Starting ${ENV}`
 
 const scope = new ServiceLoader()
     .provide(Logger.kind, logger)

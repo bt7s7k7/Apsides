@@ -2,9 +2,22 @@ import * as dotenv from "dotenv"
 import { join } from "path"
 import { Type } from "../struct/Type"
 
-dotenv.config({ path: join(import.meta.dirname, ".env.local") })
-dotenv.config({ path: join(import.meta.dirname, ".env") })
+let root: string
 
-export const ENV = Type.object({
-    PORT: Type.string
-}).deserialize(process.env)
+if (import.meta.env.DEV) {
+    // During development, the compiled file is stored in the ./build folder so we have to adjust the dirname
+    root = join(import.meta.dirname, "..")
+} else {
+    root = import.meta.dirname
+}
+
+dotenv.config({ path: join(root, ".env.local") })
+dotenv.config({ path: join(root, ".env") })
+
+export const ENV = {
+    MODE: import.meta.env.MODE,
+    PATH: root,
+    ...Type.object({
+        PORT: Type.string
+    }).deserialize(process.env),
+}

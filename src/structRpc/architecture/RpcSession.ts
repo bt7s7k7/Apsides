@@ -6,6 +6,8 @@ import { ServiceFactory, ServiceKind } from "../../serviceProvider/ServiceFactor
 import { ServiceProvider } from "../../serviceProvider/ServiceProvider"
 import { DeferredSerializationValue } from "../../struct/DeferredSerializationValue"
 import { Struct } from "../../struct/Struct"
+import { Api } from "../api/Api"
+import { BindResultAttribute, getRpcResultBindingIDs } from "../api/BindResultAttribute"
 import { ApiConsistencyError, ERR_CONTROLLER_NOT_FOUND } from "../errors"
 import { RpcMessage } from "./RpcMessage"
 import { ControllerBinding, RpcServer } from "./RpcServer"
@@ -29,6 +31,12 @@ export class RpcSession extends EventListener {
         if (binding == null) {
             throw new ClientError(`Invalid binding ${id}`, { code: ERR_CONTROLLER_NOT_FOUND })
         }
+        return binding
+    }
+
+    protected _createBiding(controller: Api.Controller) {
+        const binding = this._server["_createBinding"](controller, this)
+        this._bindings.set(binding.id, binding)
         return binding
     }
 
@@ -58,8 +66,7 @@ export class RpcSession extends EventListener {
                     }).serialize()
                 } else if (data.kind == "bind") {
                     const controller = await this._server.getController(data.type, data.id ?? null)
-                    const binding = this._server["_createBinding"](controller, this)
-                    this._bindings.set(binding.id, binding)
+                    const binding = this._createBiding(controller)
 
                     return new RpcMessage.ToClient.Binding({
                         kind: "binding",
@@ -73,19 +80,43 @@ export class RpcSession extends EventListener {
                     const controller = await this._server.getController(data.type, data.id ?? null)
                     const value = await controller["_handleCall"](data.action, data.argument)
 
-                    return new RpcMessage.ToClient.Result({
+                    const result = new RpcMessage.ToClient.Result({
                         kind: "result",
                         value
-                    }).serialize()
+                    })
+
+                    if (data.bindResult) {
+                        if (value.type!.getMetadata().get(BindResultAttribute) != null) {
+                            throw new ClientError(`Not allowed to bind result of ${JSON.stringify(controller.globalId)}::${data.action}, set the BindResultAttribute on the return type`)
+                        }
+
+                        result.bindingIds = getRpcResultBindingIDs(value.value, (controller) => {
+                            return this._createBiding(controller).id
+                        })
+                    }
+
+                    return result.serialize()
                 } else if (data.kind == "callBound") {
                     const binding = this._getBindingById(data.bindingId)
                     const controller = binding.controller ?? unreachable()
                     const value = await controller["_handleCall"](data.action, data.argument)
 
-                    return new RpcMessage.ToClient.Result({
+                    const result = new RpcMessage.ToClient.Result({
                         kind: "result",
                         value
-                    }).serialize()
+                    })
+
+                    if (data.bindResult) {
+                        if (value.type!.getMetadata().get(BindResultAttribute) != null) {
+                            throw new ClientError(`Not allowed to bind result of ${JSON.stringify(controller.globalId)}::${data.action}, set the BindResultAttribute on the return type`)
+                        }
+
+                        result.bindingIds = getRpcResultBindingIDs(value.value, (controller) => {
+                            return this._createBiding(controller).id
+                        })
+                    }
+
+                    return result.serialize()
                 } else unreachable()
             })
         })

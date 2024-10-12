@@ -44,9 +44,8 @@ void async function () {
     logger.info`Starting test`
     const client = services.get(RpcClient.kind)
     const todoManger = client.getEmptyProxy(TodoManagerProxy)
-    const listId = await todoManger.createList({ label: "New List" })
-    logger.info`Step 0: ${listId}`
-    const list = await client.getBoundProxy(TodoListProxy, listId)
+    const list = await todoManger.createList({ label: "New List" }, { bindResult: TodoListProxy })
+    logger.info`Step 0: ${list.id}`
     logger.info`Step 1: ${TodoList.baseType.clone(list)}`
     await list.setLabel("Label 2")
     logger.info`Step 2: ${TodoList.baseType.clone(list)}`

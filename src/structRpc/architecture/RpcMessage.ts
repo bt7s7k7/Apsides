@@ -28,14 +28,16 @@ export namespace RpcMessage {
             id: Type.string.as(Type.nullable),
             type: Type.string,
             action: Type.string,
-            argument: DeferredSerializationValue.ref()
+            argument: DeferredSerializationValue.ref(),
+            bindResult: Type.boolean.as(Type.nullable, { skipNullSerialize: true })
         }) { }
 
         export class CallBound extends Struct.define("RpcMessage.ToServer.CallBound", {
             kind: Type.enum("callBound"),
             bindingId: Type.number,
             action: Type.string,
-            argument: DeferredSerializationValue.ref()
+            argument: DeferredSerializationValue.ref(),
+            bindResult: Type.boolean.as(Type.nullable, { skipNullSerialize: true })
         }) { }
     }
 
@@ -52,7 +54,8 @@ export namespace RpcMessage {
     export namespace ToClient {
         export class Result extends Struct.define("RpcMessage.ToClient.Result", {
             kind: Type.enum("result"),
-            value: DeferredSerializationValue.ref()
+            value: DeferredSerializationValue.ref(),
+            bindingIds: Type.number.as(Type.array).as(Type.nullable, { skipNullSerialize: true })
         }) { }
 
         export class Binding extends Struct.define("RpcMessage.ToClient.Binding", {
