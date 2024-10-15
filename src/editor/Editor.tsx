@@ -27,6 +27,11 @@ export const Editor = eventDecorator(defineComponent({
             if (newValue != editor.getValue()) editor.setValue(newValue)
         })
 
+        watch(() => props.mode, newMode => {
+            if (!editor) return
+            editor.setOption("mode", newMode)
+        })
+
         function mountEditorHost(host: HTMLElement) {
             host.classList.add("absolute-fill")
             host.style.height = "100%"
