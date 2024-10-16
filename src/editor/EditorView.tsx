@@ -20,7 +20,8 @@ export const EditorView = eventDecorator(defineComponent({
         localStorageId: { type: String },
         config: { type: Object as PropType<EditorConfiguration> },
         codeRatio: { type: Number },
-        state: { type: EditorState as PropType<EditorState>, required: true }
+        state: { type: EditorState as PropType<EditorState>, required: true },
+        toolbarClass: { type: null }
     },
     emits: {
         compile: (state: EditorState, code: string) => true
@@ -122,7 +123,7 @@ export const EditorView = eventDecorator(defineComponent({
         return () => (
             <div class="flex column flex-fill">
                 <div class="flex row border-bottom">
-                    <div class="border-right p-1 px-2 flex-fill flex row" style={{ flexGrow: props.codeRatio }}>
+                    <div class={["border-right p-1 px-2 flex-fill flex row", props.toolbarClass]} style={{ flexGrow: props.codeRatio }}>
                         {ctx.slots.default?.()}
                         <div class="flex-fill"></div>
                         <Button onClick={runCode} variant="success">Run <Icon icon={mdiChevronRight} /> </Button>
