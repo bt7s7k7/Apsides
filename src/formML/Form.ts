@@ -1,3 +1,4 @@
+import { Readwrite } from "../comTypes/types"
 import { Predicate, convertCase } from "../comTypes/util"
 import { Struct } from "../struct/Struct"
 import { Type } from "../struct/Type"
@@ -17,7 +18,7 @@ function _getProperties(type: Type.ObjectType) {
 
         return new PropertyInfo({
             field,
-            label: Type.getMetadata(type)?.get(LabelAttribute)?.label ?? convertCase(key, "camel", "title"),
+            label: type.getMetadata().get(LabelAttribute)?.label ?? convertCase(key, "camel", "title"),
             bind: new ObjectPropertyBinding({ property: key })
         })
     }).filter(Predicate.notNull())
@@ -33,7 +34,7 @@ export namespace Form {
     }
 
     export function getField(type: Type<any>): FormField | null {
-        const metadata = Type.getMetadata(type)
+        const metadata = type.getMetadata()
         const fieldAttr = metadata?.get(CustomFieldAttribute)
         if (fieldAttr) {
             return fieldAttr.getField(type)
@@ -47,7 +48,7 @@ export namespace Form {
 
         if (Type.isEnum(type)) {
             const select = new SelectField({
-                options: type.entries
+                options: type.entries as Readwrite<typeof type.entries>
             })
 
             const label = metadata?.get(EnumLabelsAttribute)
@@ -92,7 +93,7 @@ export namespace Form {
             if (baseField == null) return null
 
             if (baseField instanceof StringField || baseField instanceof NumberField || baseField instanceof SelectField) {
-                const nullableField = Type.clone(Struct.getType(baseField), baseField) as StringField | NumberField | SelectField
+                const nullableField = Struct.getType(baseField).clone(baseField)
                 nullableField.nullable = true
 
                 if (explicitAttribute && !(nullableField instanceof SelectField)) nullableField.explicit = true
