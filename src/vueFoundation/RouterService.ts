@@ -1,11 +1,14 @@
-import { h } from "vue"
+import _debug from "debug"
+import { h, watch } from "vue"
 import { createRouter, Router, RouteRecordRaw, RouterOptions } from "vue-router"
+import { ShiftTuple } from "../comTypes/types"
 import { unreachable } from "../comTypes/util"
 import { EventListener } from "../events/EventListener"
 import { ServiceFactory, ServiceKind } from "../serviceProvider/ServiceFactory"
 import { ServiceProvider } from "../serviceProvider/ServiceProvider"
 import { VueApplication } from "./VueApplication"
-import { ShiftTuple } from "../comTypes/types"
+
+const debug = _debug("apsides:vue:router-service")
 
 export class RouterService extends EventListener {
     protected _router: Router | null = null
@@ -13,6 +16,7 @@ export class RouterService extends EventListener {
 
     public addRoute(route: RouteRecordRaw) {
         if (this._routes != null) {
+            debug("Registering route: %o", route)
             this._routes.push(route)
         } else throw new Error("Cannot add a new route after the Vue application has already been mounted")
     }
@@ -46,6 +50,12 @@ export class RouterService extends EventListener {
                 ],
                 history: options.history
             })
+
+            if (debug.enabled) {
+                watch(this._router.currentRoute, route => {
+                    debug("Route: %o", route)
+                }, { immediate: true })
+            }
 
             app.use(this._router)
         })

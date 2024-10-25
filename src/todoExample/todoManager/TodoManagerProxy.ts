@@ -1,10 +1,11 @@
+import { reactive } from "vue"
 import { AsyncInitializationQueue } from "../../serviceProvider/AsyncInitializationQueue"
 import { ServiceFactory, ServiceKind } from "../../serviceProvider/ServiceFactory"
 import { ServiceProvider } from "../../serviceProvider/ServiceProvider"
 import { RpcClient } from "../../structRpc/architecture/RpcClient"
 import { TodoManagerApi } from "./TodoManager"
 
-export class TodoManagerProxy extends TodoManagerApi.makeProxy() {
+export class TodoManagerProxy extends TodoManagerApi.makeProxy(reactive) {
     public static readonly kind = new ServiceKind<TodoManagerProxy>("TodoManager")
     public static init(services: ServiceProvider) {
         const client = services.get(RpcClient.kind)

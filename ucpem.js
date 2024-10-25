@@ -9,7 +9,8 @@ project.prefix("src").res("todoExample",
     github("bt7s7k7/Vue3GUI").res("vue3gui"),
     github("bt7s7k7/CommonTypes").res("comTypes"),
     github("bt7s7k7/LogLib").res("prettyPrint"),
-    github("bt7s7k7/Struct").res("struct")
+    github("bt7s7k7/Struct").res("struct"),
+    github("bt7s7k7/Apsides").res("formBuilder")
 )
 
 async function buildBackend(/** @type {boolean} */ isDev) {

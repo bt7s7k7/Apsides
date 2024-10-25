@@ -19,7 +19,7 @@ export class Api<T extends Struct.StructStatics, TApi extends Api._ApiConstraint
     protected readonly _actions: Api.ActionType<Type, Type>[] = []
     protected readonly _events: Api.EventType<Type>[] = []
 
-    public makeProxy(): { new(...args: ConstructorParameters<typeof Api.Proxy>): Api._ProxyInstance<T, TApi>, verifyModel: typeof Api.Proxy["verifyModel"] } {
+    public makeProxy(wrapper?: (value: any) => any): { new(...args: ConstructorParameters<typeof Api.Proxy>): Api._ProxyInstance<T, TApi>, verifyModel: typeof Api.Proxy["verifyModel"] } {
         const proxyBase = this.model as unknown as new (...args: any[]) => Api.Proxy
 
         const events = this._events
@@ -85,6 +85,10 @@ export class Api<T extends Struct.StructStatics, TApi extends Api._ApiConstraint
 
                 for (const event of events) {
                     (this as any)[event.name] = new EventEmitter()
+                }
+
+                if (wrapper) {
+                    return wrapper(this)
                 }
             }
 

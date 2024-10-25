@@ -6,7 +6,9 @@ import { ServiceFactory, ServiceKind } from "../../serviceProvider/ServiceFactor
 import { ServiceProvider } from "../../serviceProvider/ServiceProvider"
 import { DeferredSerializationValue } from "../../struct/DeferredSerializationValue"
 import { Mutation } from "../../struct/Mutation"
+import { Struct } from "../../struct/Struct"
 import { Api } from "../api/Api"
+import { MutationTap } from "../api/MutationTap"
 import { ApiConsistencyError, ERR_CONTROLLER_NOT_FOUND } from "../errors"
 import { RpcMessage } from "./RpcMessage"
 import { RpcSession } from "./RpcSession"
@@ -34,6 +36,8 @@ export class RpcServer extends EventListener {
     protected readonly _bindings = new Map<number, ControllerBinding>()
     protected readonly _controllers = new Map<string, Api.Controller>()
     protected _nextId = 0
+
+    protected readonly _taps = new Map<string, Set<MutationTap>>()
 
     /** Registers a controller to be always available. To unregister it you'll have to dispose it. */
     public registerController(controller: Api.Controller) {
@@ -91,6 +95,13 @@ export class RpcServer extends EventListener {
     }
 
     protected _notify(controller: Api.Controller, mutations: Mutation[]) {
+        const taps = this._taps.get(Struct.getBaseType(controller).name)
+        if (taps) {
+            for (const tap of taps) {
+                tap.handleChanged(controller)
+            }
+        }
+
         for (const [session, bindings] of this._collectUsers(controller)) {
             session["_sendMessage"](new RpcMessage.ToClient.Notify({
                 kind: "notify",
@@ -119,6 +130,13 @@ export class RpcServer extends EventListener {
         }
 
         return users
+    }
+
+    public addTap<T extends typeof Api.Controller>(type: T): MutationTap<InstanceType<T>> {
+        const baseType = Struct.getBaseType(type)
+        const tap = new MutationTap<InstanceType<T>>(this, baseType.name)
+        ensureKey(this._taps, tap.type, () => new Set()).add(tap as any)
+        return tap
     }
 
     protected constructor(

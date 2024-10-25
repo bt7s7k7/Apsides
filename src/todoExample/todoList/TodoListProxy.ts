@@ -1,4 +1,5 @@
+import { reactive } from "vue"
 import { TodoListApi } from "./TodoList"
 
 
-export class TodoListProxy extends TodoListApi.makeProxy() { }
+export class TodoListProxy extends TodoListApi.makeProxy(reactive) { }

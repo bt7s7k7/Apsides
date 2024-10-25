@@ -13,6 +13,12 @@ export class TodoManagerController extends TodoManagerApi.makeController() {
     protected readonly _lists = new Map<string, TodoListController>()
     protected readonly _services = this.rpcServer.services
     protected readonly _logger = this._services.get(Logger.kind)
+    protected readonly _tap = this.rpcServer.addTap(TodoListController).addCallback(() => this._updateListInfo())
+
+    protected _updateListInfo() {
+        const lists = [...this._lists.values()].map(v => ({ id: v.id, label: v.label }))
+        this._mutate(v => v.lists = lists)
+    }
 
     static {
         TodoManagerApi.makeControllerImpl(TodoManagerController, {
@@ -28,13 +34,10 @@ export class TodoManagerController extends TodoManagerApi.makeController() {
 
                 this._lists.set(list.id, list)
                 this.rpcServer.registerController(list)
-                this.onListChanged.emit(list.id)
+                this._updateListInfo()
 
                 return list
             },
-            async getLists() {
-                return [...this._lists.values()].map(v => ({ id: v.id, label: v.label }))
-            }
         })
     }
 
@@ -42,6 +45,7 @@ export class TodoManagerController extends TodoManagerApi.makeController() {
     public static init(services: ServiceProvider) {
         const server = services.get(RpcServer.kind)
         const controller = new TodoManagerController(server, null)
+        controller._updateListInfo()
         server.registerController(controller)
         const asyncQueue = services.get(AsyncInitializationQueue.kind)
         asyncQueue.addTask(controller.init(undefined!))

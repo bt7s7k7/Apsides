@@ -1,3 +1,4 @@
+import _debug from "debug"
 import { io, ManagerOptions, Socket, SocketOptions } from "socket.io-client"
 import { EventEmitter } from "../events/EventEmitter"
 import { Logger } from "../foundation/logger/Logger"
@@ -5,6 +6,8 @@ import { MessageTransport } from "../foundation/messaging/MessageTransport"
 import { ServiceFactory } from "../serviceProvider/ServiceFactory"
 import { ServiceProvider } from "../serviceProvider/ServiceProvider"
 import { SocketIOTransport, SocketIOTransportEvents } from "./SocketIOTransport"
+
+const debug = _debug("apsides:socket-io")
 
 export class SocketIOClient extends SocketIOTransport {
     public override readonly raw: Socket<SocketIOTransportEvents>
@@ -62,6 +65,7 @@ export class SocketIOClient extends SocketIOTransport {
         })
 
         this.raw.on("notify", (message) => {
+            debug("Got notify:    %o", message)
             this.onNotification.emit(message)
         })
 
