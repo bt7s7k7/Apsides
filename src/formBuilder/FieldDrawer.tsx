@@ -4,7 +4,7 @@ import { ImmutableList } from "../comTypes/ImmutableList"
 import { Optional } from "../comTypes/Optional"
 import { range, toString, unreachable } from "../comTypes/util"
 import { Binding } from "../formML/Binding"
-import { CheckField, Form, FormField, InfoField, NullableField, NumberField, ObjectField, SelectField, StringField, TableField } from "../formML/Form"
+import { CheckField, Form, FormField, InfoField, NullableField, NumberField, ObjectField, ReadonlyField, SelectField, StringField, TableField } from "../formML/Form"
 import { Mutation } from "../struct/Mutation"
 import { Struct } from "../struct/Struct"
 import { ButtonGroup } from "../vue3gui/Button"
@@ -246,6 +246,19 @@ export const FieldDrawer = (defineComponent({
         }
     }
 }))
+
+export const ReadonlyFieldDrawer = defineComponent({
+    name: "ReadonlyFieldDrawer",
+    props: {
+        ...getFieldDrawerProps(ReadonlyField)
+    },
+    setup(props, ctx) {
+        const value = useFieldDrawerValue(props)
+
+        return () => toString(value.value)
+    },
+})
+registerFieldDrawer(ReadonlyField, ReadonlyFieldDrawer)
 
 export const StringFieldDrawer = defineComponent({
     name: "StringFieldDrawer",

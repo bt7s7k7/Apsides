@@ -170,6 +170,9 @@ export class NullableField extends Struct.define("NullableField", {
 }) { }
 FormField_t.register(NullableField)
 
+export class ReadonlyField extends Struct.define("ReadonlyField", {}) { }
+FormField_t.register(ReadonlyField)
+
 export class CustomFieldAttribute<T extends Type<any> = Type<any>> {
     public getField(type: Type<any>): FormField {
         if (typeof this._field == "function") {
