@@ -11,4 +11,5 @@ project.prefix("src").use(
     project.ref("vueFoundation"),
     project.ref("honoService"),
     project.ref("socketIOTransport"),
+    project.ref("restTransport"),
 )

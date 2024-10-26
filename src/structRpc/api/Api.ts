@@ -1,4 +1,4 @@
-import { Constructor } from "../../comTypes/types"
+import { Constructor, ToReadonlyCollection } from "../../comTypes/types"
 import { assertType, objectMap } from "../../comTypes/util"
 import { defaultDisposeAction } from "../../events/Disposable"
 import { DISPOSABLE_HANDLE, DisposableHandle } from "../../events/DisposableHandle"
@@ -15,17 +15,21 @@ import { RpcServer } from "../architecture/RpcServer"
 import { ApiConsistencyError, ERR_INVALID_ACTION } from "../errors"
 import { bindRpcResult } from "./BindResultAttribute"
 
-export class Api<T extends Struct.StructStatics, TApi extends Api._ApiConstraint> {
+export class Api<T extends Struct.StructStatics = Struct.StructStatics, TApi extends Api._ApiConstraint = Api._ApiConstraint> {
     protected readonly _actions: Api.ActionType<Type, Type>[] = []
     protected readonly _events: Api.EventType<Type>[] = []
 
-    public makeProxy(wrapper?: (value: any) => any): { new(...args: ConstructorParameters<typeof Api.Proxy>): Api._ProxyInstance<T, TApi>, verifyModel: typeof Api.Proxy["verifyModel"] } {
+    public get actions() { return this._actions as ToReadonlyCollection<typeof this._actions> }
+    public get events() { return this._events as ToReadonlyCollection<typeof this._events> }
+
+    public makeProxy(wrapper?: (value: any) => any): { new(...args: ConstructorParameters<typeof Api.Proxy>): Api._ProxyInstance<T, TApi>, verifyModel: typeof Api.Proxy["verifyModel"], api: Api } {
         const proxyBase = this.model as unknown as new (...args: any[]) => Api.Proxy
 
         const events = this._events
         const eventsLookup = new Map(this._events.map(v => [v.name, v.type]))
         const modelType = this.model.ref()
         const typeName = modelType.name
+        const api = this
 
         class _ApiProxy extends proxyBase {
             public override readonly [DISPOSABLE_HANDLE] = new DisposableHandle(this)
@@ -93,6 +97,7 @@ export class Api<T extends Struct.StructStatics, TApi extends Api._ApiConstraint
             }
 
             protected override _rpcBindingId: number | null = null
+            public static readonly api = api
         }
 
         for (const action of this._actions) {
@@ -116,7 +121,7 @@ export class Api<T extends Struct.StructStatics, TApi extends Api._ApiConstraint
         return _ApiProxy as any
     }
 
-    public makeController(): new (...args: ConstructorParameters<typeof Api.Controller>) => Api._ControllerInstance<T, TApi> {
+    public makeController(): (new (...args: ConstructorParameters<typeof Api.Controller>) => Api._ControllerInstance<T, TApi>) & { api: Api } {
         const controllerBase = this.model as unknown as new (...args: any[]) => Api.Controller
 
         const events = this._events
@@ -124,6 +129,7 @@ export class Api<T extends Struct.StructStatics, TApi extends Api._ApiConstraint
         const actionsLookup = new Map(actions.map(v => [v.name, v]))
         const modelType = this.model.ref()
         const typeName = modelType.name
+        const api = this
 
         class _ApiController extends controllerBase {
             public override readonly [DISPOSABLE_HANDLE] = new DisposableHandle(this)
@@ -184,6 +190,8 @@ export class Api<T extends Struct.StructStatics, TApi extends Api._ApiConstraint
                     })
                 }
             }
+
+            public static readonly api = api
         }
 
 
@@ -282,6 +290,8 @@ export namespace Api {
         public static verifyModel(value: unknown): boolean
 
         constructor(client: RpcClient, id: string | null)
+
+        public static readonly api: Api
     }
 
     export function isProxy(value: unknown): value is Proxy {
@@ -303,6 +313,8 @@ export namespace Api {
         protected _handleCall(action: string, argument: DeferredSerializationValue): Promise<DeferredSerializationValue>
 
         constructor(server: RpcServer, id: string | null)
+
+        public static readonly api: Api
     }
 
     export function isController(value: unknown): value is Controller {
@@ -314,6 +326,7 @@ export namespace Api {
             public readonly name: string,
             public readonly param: TParam,
             public readonly result: TResult,
+            public readonly desc: string | null
         ) { }
     }
 
@@ -324,10 +337,10 @@ export namespace Api {
         ) { }
     }
 
-    export function action<TParam extends Type, TResult extends Type>(param: TParam, result: TResult): _ActionDefinition<TParam, TResult> {
-        return { kind: "action", param, result }
+    export function action<TParam extends Type, TResult extends Type>(param: TParam, result: TResult, desc: string | null = null): _ActionDefinition<TParam, TResult> {
+        return { kind: "action", param, result, desc }
     }
-    export type _ActionDefinition<TParam extends Type, TResult extends Type> = { kind: "action", param: TParam, result: TResult }
+    export type _ActionDefinition<TParam extends Type, TResult extends Type> = { kind: "action", param: TParam, result: TResult, desc: string | null }
 
     export function event<T extends Type>(type: T) {
         return { kind: "event" as const, type }
@@ -347,7 +360,7 @@ export namespace Api {
 
         const api = objectMap(apiDefinition, (value, key) => (
             value.kind == "action" ? (
-                new ActionType(key as string, value.param, value.result)
+                new ActionType(key as string, value.param, value.result, value.desc)
             ) : (
                 new EventType(key as string, value.type)
             )

@@ -1,4 +1,3 @@
-import { listeners } from "process"
 import { Struct } from "../../struct/Struct"
 import { Type } from "../../struct/Type"
 import { Api } from "../../structRpc/api/Api"
@@ -11,5 +10,5 @@ export type TodoListInfo = Type.Extract<typeof TodoListInfo_t>
 export const TodoManagerApi = Api.define(class TodoManager extends Struct.define("TodoManager", {
     lists: TodoListInfo_t.as(Type.array)
 }) { }, {
-    createList: Api.action(Type.object({ label: Type.string }), TodoList.ref().annotate(BindResultAttribute)),
+    createList: Api.action(Type.object({ label: Type.string }), TodoList.ref().annotate(BindResultAttribute), "Creates a new todo list"),
 })

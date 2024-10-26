@@ -299,6 +299,9 @@ project.script("builder", async (args) => {
             supported: {
                 "using": false
             },
+            loader: {
+                ".html": "text"
+            }
         }
 
         if (plugin != null) {
@@ -400,6 +403,9 @@ project.script("builder", async (args) => {
             if (data.toString() == "rs\n") {
                 log("Reloaded due to user command.")
                 execute()
+            } else if (data.toString() == "rebuild\n") {
+                log("Reloaded due to user command.")
+                rebuildNow().then(() => execute())
             }
         })
 
