@@ -13,7 +13,7 @@ function intro() {
     class Person extends Struct.define("Person", {
         name: Type.string,
         surname: Type.string,
-        age: Type.number.as(Type.annotate,
+        age: Type.number.annotate(
             new CustomFieldAttribute(
                 new NumberField({ integer: true })
             )
@@ -52,7 +52,7 @@ function mutation() {
     class Person extends Struct.define("Person", {
         name: Type.string,
         surname: Type.string,
-        age: Type.number.as(Type.annotate,
+        age: Type.number.annotate(
             new CustomFieldAttribute(
                 new NumberField({ integer: true })
             )
@@ -157,7 +157,7 @@ function table() {
         cost: Type.number
     }) { }
 
-    const Items_t = Item.ref().as(Type.array).as(Type.annotate,
+    const Items_t = Item.ref().as(Type.array).annotate(
         new TableAttribute({ showIndex: true })
     )
 
@@ -253,18 +253,18 @@ function reference() {
     const Sample_t = Type.object({
         string: Type.string,
         // Using an explicit field, all changes are atomic and cancellable
-        explicit: Type.string.as(Type.annotate,
+        explicit: Type.string.annotate(
             new CustomFieldAttribute(
                 new StringField({ explicit: true })
             )
         ),
         number: Type.number,
-        integer: Type.number.as(Type.annotate,
+        integer: Type.number.annotate(
             new CustomFieldAttribute(
                 NumberField.INTEGER
             )
         ),
-        minMax: Type.number.as(Type.annotate,
+        minMax: Type.number.annotate(
             new CustomFieldAttribute(
                 new NumberField({ min: 1, max: 2 })
             )
