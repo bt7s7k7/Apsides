@@ -19,10 +19,10 @@
     "scripts": {
         "frontend-dev": "concurrently --raw --kill-others \"vite\" \"tsc --noEmit --watch --incremental --preserveWatchOutput\"",
         "frontend-build": "vite build",
-        "backend-dev": "ucpem run watch-backend",
-        "backend-build": "ucpem run build-backend",
+        "backend-dev": "ucpem run builder watch",
+        "backend-build": "ucpem run builder build",
         "build": "tsc --noEmit --incremental && yarn frontend-build && yarn backend-build",
-        "dev": "ucpem run dev",
+        "dev": "ucpem run builder dev",
         "serve": "vite preview",
         "lint": "yarn eslint ./",
         "get-ucpem": "curl -L https://github.com/bt7s7k7/UCPeM/releases/latest/download/ucpem.js -o node_modules/.bin/ucpem",
