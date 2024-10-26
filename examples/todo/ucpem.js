@@ -4,14 +4,16 @@
 const { spawn } = require("child_process")
 const { statSync } = require("fs")
 const { writeFile, readFile, rm } = require("fs/promises")
-const { project, github, copy, join, constants, log, run } = require("ucpem")
+const { project, copy, join, constants, log, run } = require("ucpem")
+
+project.isChild()
 
 project.prefix("src").res("todoExample",
-    github("bt7s7k7/Vue3GUI").res("vue3gui"),
-    github("bt7s7k7/CommonTypes").res("comTypes"),
-    github("bt7s7k7/LogLib").res("prettyPrint"),
-    github("bt7s7k7/Struct").res("struct"),
-    github("bt7s7k7/Apsides").res("formBuilder")
+    project.ref("formBuilder"),
+    project.ref("structRpc"),
+    project.ref("vueFoundation"),
+    project.ref("honoService"),
+    project.ref("socketIOTransport"),
 )
 
 async function buildBackend(/** @type {boolean} */ isDev, /** @type {import("esbuild").Plugin | null} */ plugin = null) {

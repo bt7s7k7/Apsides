@@ -1,5 +1,6 @@
 
 # UCPeM generated, write above to not be overwritten
-/struct
 /comTypes
+/prettyPrint
+/struct
 /vue3gui

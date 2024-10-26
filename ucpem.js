@@ -1,10 +1,12 @@
 /// <reference path="./.vscode/config.d.ts" />
 // @ts-check
 
-const { project, github, join, constants, run, copy, getProjectDetails, log } = require("ucpem")
+const { project, github, join, constants, run, copy, getProjectDetails, log, include } = require("ucpem")
 const { readdir, writeFile, mkdir, rm, readFile } = require("fs/promises")
 const { extname, basename } = require("path")
 const { readFileSync } = require("fs")
+
+include("examples/todo/ucpem.js")
 
 project.prefix("src").res("formML",
     github("bt7s7k7/Struct").res("struct"),
@@ -19,6 +21,37 @@ project.prefix("src").res("formBuilder",
 project.prefix("src").res("editor",
     github("bt7s7k7/Vue3GUI").res("vue3gui"),
     github("bt7s7k7/CommonTypes").res("comTypes"),
+)
+
+project.prefix("src").res("events",
+    github("bt7s7k7/CommonTypes").res("comTypes"),
+)
+
+project.prefix("src").res("foundation",
+    github("bt7s7k7/LogLib").res("prettyPrint"),
+    project.ref("serviceProvider"),
+)
+
+project.prefix("src").res("vueFoundation",
+    github("bt7s7k7/Vue3GUI").res("vue3gui"),
+    project.ref("foundation"),
+)
+
+project.prefix("src").res("serviceProvider",
+    project.ref("events"),
+)
+
+project.prefix("src").res("honoService",
+    project.ref("foundation"),
+)
+
+project.prefix("src").res("socketIOTransport",
+    project.ref("foundation"),
+)
+
+project.prefix("src").res("structRpc",
+    github("bt7s7k7/Struct").res("struct"),
+    project.ref("foundation"),
 )
 
 /** @typedef {{ name: string, version: string, devDependencies: Record<string, string>, dependencies: Record<string, string> } & Record<string, any>} PackageJson */

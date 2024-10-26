@@ -1,8 +1,15 @@
 
 # UCPeM generated, write above to not be overwritten
-/vue3gui
 /comTypes
-/prettyPrint
-/struct
+/events
 /formBuilder
 /formML
+/foundation
+/honoService
+/prettyPrint
+/serviceProvider
+/socketIOTransport
+/struct
+/structRpc
+/vue3gui
+/vueFoundation
