@@ -2,6 +2,7 @@
 // @ts-check
 
 const { spawn } = require("child_process")
+const { statSync } = require("fs")
 const { writeFile, readFile, rm } = require("fs/promises")
 const { project, github, copy, join, constants, log, run } = require("ucpem")
 
@@ -13,7 +14,7 @@ project.prefix("src").res("todoExample",
     github("bt7s7k7/Apsides").res("formBuilder")
 )
 
-async function buildBackend(/** @type {boolean} */ isDev) {
+async function buildBackend(/** @type {boolean} */ isDev, /** @type {import("esbuild").Plugin | null} */ plugin = null) {
     const { build, context } = require("esbuild")
 
     await rm(join(constants.projectPath, "build"), { force: true, recursive: true })
@@ -36,13 +37,16 @@ async function buildBackend(/** @type {boolean} */ isDev) {
         },
         supported: {
             "using": false
-        }
+        },
+    }
+
+    if (plugin != null) {
+        options.plugins = [plugin]
     }
 
     if (isDev) {
         const watcher = await context(options)
-        await watcher.watch()
-        return
+        return watcher
     }
 
     await build(options)
@@ -72,8 +76,18 @@ project.script("build-backend", async () => {
 }, { desc: "Builds and bundles backend code" })
 
 async function watchBackend() {
+    let lastDate = NaN
+    let date = NaN
 
-    await buildBackend(true)
+    const esbuildContext = await buildBackend(true, {
+        name: "watch-runner",
+        setup(build) {
+            build.onEnd(() => {
+                lastDate = date
+                date = statSync("./build/index.mjs").ctimeMs
+            })
+        }
+    })
 
     /** @type {import("child_process").ChildProcess | null} */
     let child = null
@@ -82,6 +96,9 @@ async function watchBackend() {
         // eslint-disable-next-line no-console
         console.log("\x1b[96m[backend] " + msg + "\x1b[0m")
     }
+
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    let debounceTimerId = null
 
     function execute() {
         if (child != null) {
@@ -92,10 +109,35 @@ async function watchBackend() {
         child = spawn(process.argv[0], ["--enable-source-maps", "--inspect", "./build/index.mjs"], { stdio: "inherit" })
     }
 
+    async function rebuildNow(params) {
+        if (debounceTimerId != null) {
+            clearTimeout(debounceTimerId)
+            debounceTimerId = null
+        }
+
+        if (esbuildContext == null) throw new TypeError("Build backend didn't return a context when isDev was true")
+        await esbuildContext.rebuild()
+    }
+
+    async function rebuild() {
+        if (debounceTimerId != null) {
+            clearTimeout(debounceTimerId)
+        }
+
+        debounceTimerId = setTimeout(() => {
+            debounceTimerId = null
+            rebuildNow().then(() => {
+                if (date == lastDate) return
+                log("Reloaded due to changes.")
+                execute()
+            })
+        }, 1000)
+    }
+
     process.stdin.on("data", (data) => {
         if (data.toString() == "rs\n") {
-            execute()
             log("Reloaded due to user command.")
+            execute()
         }
     })
 
@@ -104,11 +146,16 @@ async function watchBackend() {
         shell: true,
     })
 
+    let first = true
     tsc.stdout.addListener("data", (chunk) => {
         process.stdout.write(chunk)
         if (chunk.toString().includes("Found 0 errors.")) {
-            log("Reloaded due to changes.")
-            execute()
+            if (first) {
+                first = false
+                rebuildNow().then(() => execute())
+            } else {
+                rebuild()
+            }
         }
     })
 
