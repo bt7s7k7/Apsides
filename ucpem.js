@@ -42,12 +42,17 @@ project.prefix("src").res("serviceProvider",
     project.ref("events"),
 )
 
-project.prefix("src").res("honoService",
+project.prefix("packages").res("honoService",
     project.ref("foundation"),
 )
 
-project.prefix("src").res("socketIOTransport",
+project.prefix("packages").res("socketIOTransport",
     project.ref("foundation"),
+)
+
+project.prefix("packages").res("restTransport",
+    project.ref("honoService"),
+    project.ref("structRpc"),
 )
 
 project.prefix("src").res("structRpc",
