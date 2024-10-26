@@ -5,7 +5,7 @@ const { project } = require("ucpem")
 
 project.isChild()
 
-project.prefix("src").res("todoExample",
+project.prefix("src").use(
     project.ref("formBuilder"),
     project.ref("structRpc"),
     project.ref("vueFoundation"),
