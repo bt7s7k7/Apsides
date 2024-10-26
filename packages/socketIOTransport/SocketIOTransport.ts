@@ -4,6 +4,8 @@ import { toString } from "../comTypes/util"
 import { ClientRequest } from "../foundation/messaging/ClientRequest"
 import { ClientError, ERR_SERVER_ERROR } from "../foundation/messaging/errors"
 import { MessageTransport } from "../foundation/messaging/MessageTransport"
+import { DeserializationError } from "../struct/Type"
+import { ERR_DESERIALIZATION } from "../structRpc/errors"
 
 const debug = _debug("apsides:socket-io")
 
@@ -49,6 +51,9 @@ export abstract class SocketIOTransport extends MessageTransport {
                 if (error instanceof ClientError) {
                     debug("Sent error:    %o %o", error.code, error.message)
                     callback(error.code, error.message)
+                } else if (error instanceof DeserializationError) {
+                    debug("Sent error:    %o %o", ERR_DESERIALIZATION, error.message)
+                    callback(ERR_DESERIALIZATION, error.message)
                 } else {
                     debug("Sent internal server error")
                     callback(ERR_SERVER_ERROR, "Internal server error")

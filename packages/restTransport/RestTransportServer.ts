@@ -9,7 +9,7 @@ import { DeferredSerializationValue } from "../struct/DeferredSerializationValue
 import { DeserializationError, PlainObjectDeserializer } from "../struct/Type"
 import { RpcMessage } from "../structRpc/architecture/RpcMessage"
 import { RpcSession } from "../structRpc/architecture/RpcSession"
-import { ERR_CONTROLLER_NOT_FOUND, ERR_INVALID_ACTION } from "../structRpc/errors"
+import { ERR_CONTROLLER_NOT_FOUND, ERR_DESERIALIZATION, ERR_INVALID_ACTION } from "../structRpc/errors"
 import { RestTransport } from "./RestTransport"
 
 export class RestTransportServer extends RestTransport {
@@ -96,7 +96,7 @@ export class RestTransportServer extends RestTransport {
                     }
 
                     if (err instanceof DeserializationError) {
-                        return c.text(err.message, 400)
+                        return c.json({ code: ERR_DESERIALIZATION, message: err.message }, 400)
                     }
 
                     throw err
