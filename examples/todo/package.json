@@ -1,0 +1,48 @@
+{
+    "name": "todo-example",
+    "version": "0.0.0",
+    "private": true,
+    "devDependencies": {
+        "@types/debug": "^4.1.12",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "@vitejs/plugin-vue": "^4.2.3",
+        "@vitejs/plugin-vue-jsx": "^3.0.1",
+        "concurrently": "^8.2.0",
+        "esbuild": "^0.23.0",
+        "eslint": "^8.53.0",
+        "sass": "^1.63.6",
+        "typescript": "5.2",
+        "vite": "^4.4.3",
+        "vite-node": "^2.0.4"
+    },
+    "scripts": {
+        "frontend-dev": "concurrently --raw --kill-others \"vite\" \"tsc --noEmit --watch --incremental --preserveWatchOutput\"",
+        "frontend-build": "vite build",
+        "backend-dev": "ucpem run watch-backend",
+        "backend-build": "ucpem run build-backend",
+        "build": "tsc --noEmit --incremental && yarn frontend-build && yarn backend-build",
+        "dev": "ucpem run dev",
+        "serve": "vite preview",
+        "lint": "yarn eslint ./",
+        "get-ucpem": "curl -L https://github.com/bt7s7k7/UCPeM/releases/latest/download/ucpem.js -o node_modules/.bin/ucpem",
+        "start": "cd build && yarn start"
+    },
+    "dependencies": {
+        "@hono/node-server": "^1.13.2",
+        "@mdi/js": "^7.2.96",
+        "@types/node": "^22.0.0",
+        "debug": "^4.3.7",
+        "dotenv": "^16.4.5",
+        "hono": "^4.6.4",
+        "socket.io": "^4.7.5",
+        "socket.io-client": "^4.7.5",
+        "vue": "^3.3.4",
+        "vue-router": "^4.2.4"
+    },
+    "optionalDependencies": {
+        "bufferutil": "^4.0.8",
+        "utf-8-validate": "^6.0.4"
+    },
+    "type": "module"
+}
