@@ -24,7 +24,7 @@ export const Home = (defineComponent({
         return () => (
             <div class="as-page pb-4 pt-4">
                 <div class="flex row gap-7">
-                    <img src={logo} class="w-300" />
+                    <img src={logo} class="w-300 h-300" />
                     <div>
                         <h1 class="mt-7">Apsides</h1>
                         <p>Full&#8209;stack TypeScript framework, including an ORM, UI component library, form builder and a type&#8209;safe RPC system.</p>
