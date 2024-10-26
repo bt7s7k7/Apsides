@@ -1,11 +1,12 @@
 /// <reference path="./.vscode/config.d.ts" />
 // @ts-check
 
-const { project, github, join, constants, run, copy, getProjectDetails, log, include } = require("ucpem")
+const { project, github, join, constants, run, copy, getProjectDetails, log, include, path } = require("ucpem")
 const { readdir, writeFile, mkdir, rm, readFile } = require("fs/promises")
-const { extname, basename } = require("path")
+const { extname, basename, relative } = require("path")
 const { readFileSync, statSync } = require("fs")
 const { spawn } = require("child_process")
+const { console } = require("inspector")
 
 include("examples/todo/ucpem.js")
 
@@ -42,15 +43,15 @@ project.prefix("src").res("serviceProvider",
     project.ref("events"),
 )
 
-project.prefix("packages").res("honoService",
+project.prefix("src").res("honoService",
     project.ref("foundation"),
 )
 
-project.prefix("packages").res("socketIOTransport",
+project.prefix("src").res("socketIOTransport",
     project.ref("foundation"),
 )
 
-project.prefix("packages").res("restTransport",
+project.prefix("src").res("restTransport",
     project.ref("honoService"),
     project.ref("structRpc"),
 )
@@ -60,7 +61,7 @@ project.prefix("src").res("structRpc",
     project.ref("foundation"),
 )
 
-/** @typedef {{ name: string, version: string, devDependencies: Record<string, string>, dependencies: Record<string, string> } & Record<string, any>} PackageJson */
+/** @typedef {{ name: string, version: string, devDependencies: Record<string, string>, dependencies: Record<string, string>, optionalDependencies?: Record<string, string> } & Record<string, any>} PackageJson */
 /** @typedef {{ compilerOptions: any, include?: string[], exclude?: string[] }} TSConfig */
 
 const RESOURCES = new class {
@@ -80,6 +81,27 @@ class Package {
         return join(constants.projectPath, "src", this.folder)
     }
 
+    applyDependencies(/** @type {PackageJson} */ packageJSON) {
+        const version = packageJSON.version
+        for (const dependency of this.dependencies) {
+            packageJSON.dependencies[dependency] = version
+            const dependencyPackages = packagesLookup.get(dependency)
+            if (dependencyPackages == null) throw new TypeError("Cannot find package: " + dependency)
+            dependencyPackages.applyDependencies(packageJSON)
+        }
+
+        this.packageMerge?.(packageJSON)
+    }
+
+    async executeCallback(/** @type {string} */ src, /** @type {string} */ dest) {
+        await this.callback?.(src, dest)
+        for (const dependency of this.dependencies) {
+            const dependencyPackages = packagesLookup.get(dependency)
+            if (dependencyPackages == null) throw new TypeError("Cannot find package: " + dependency)
+            await dependencyPackages.executeCallback(src, dest)
+        }
+    }
+
     /**
      * @param {string} name
      * @param {string} folder
@@ -90,7 +112,8 @@ class Package {
             umdName = /** @type {string | null} */(null),
             dependencies = /** @type {string[]} */([]),
             packageMerge = /** @type {((pkg: PackageJson) => void) | null} */(null),
-            callback = /** @type {((src: string, dest: string) => void) | null} */(null),
+            callback = /** @type {((src: string, dest: string) => Promise<void>) | null} */(null),
+            strategy = /** @type {"vite" | "esbuild"} */("vite"),
             customReadme = false
         } = {}
     ) {
@@ -102,6 +125,7 @@ class Package {
         this.packageMerge = packageMerge
         this.callback = callback
         this.customReadme = customReadme
+        this.strategy = strategy
     }
 }
 
@@ -111,18 +135,45 @@ function addVueDependencies(/** @type {PackageJson} */pkg) {
     pkg.dependencies["vue-router"] = our.dependencies["vue-router"]
 }
 
+function addHono(/** @type {PackageJson} */pkg) {
+    const our = RESOURCES.getProjectPackageJSON()
+    pkg.dependencies["hono"] = our.dependencies["hono"]
+    pkg.dependencies["@hono/node-server"] = our.dependencies["@hono/node-server"]
+}
+
+function addSocketIO(/** @type {PackageJson} */pkg) {
+    const our = RESOURCES.getProjectPackageJSON()
+    pkg.dependencies["socket.io"] = our.dependencies["socket.io"]
+    pkg.dependencies["socket.io-client"] = our.dependencies["socket.io-client"]
+    if (our.optionalDependencies) {
+        pkg.optionalDependencies ??= {}
+        pkg.optionalDependencies["bufferutil"] = our.optionalDependencies["bufferutil"]
+        pkg.optionalDependencies["utf-8-validate"] = our.optionalDependencies["utf-8-validate"]
+    }
+}
+
 const packages = [
-    new Package("@apsides/struct", "struct", { customReadme: true }),
-    new Package("@apsides/form-builder", "formBuilder", { dependencies: ["@apsides/struct", "@apsides/formML", "@apsides/ui"], packageMerge: addVueDependencies, customReadme: true }),
-    new Package("@apsides/form-ml", "formML", { dependencies: ["@apsides/struct"], customReadme: true }),
-    new Package("kompa", "comTypes"),
+    new Package("@apsides/struct", "struct", { customReadme: true, strategy: "esbuild" }),
+    new Package("@apsides/form-builder", "formBuilder", { dependencies: ["@apsides/struct", "@apsides/form-ml", "@apsides/ui"], packageMerge: addVueDependencies, customReadme: true }),
+    new Package("@apsides/form-ml", "formML", { dependencies: ["@apsides/struct", "kompa"], customReadme: true, strategy: "esbuild" }),
+    new Package("kompa", "comTypes", { strategy: "esbuild" }),
     new Package("@apsides/ui", "vue3gui", {
         umdName: "ApsidesUI", packageMerge: addVueDependencies,
         async callback(src, dest) {
             await copy(join(src, "eventDecorator.d.ts"), join(dest, "eventDecorator.d.ts"))
         }
     }),
+    new Package("@apsides/events", "events", { customReadme: true, dependencies: ["kompa"], strategy: "esbuild" }),
+    new Package("@apsides/object-description", "prettyPrint", { customReadme: true, strategy: "esbuild" }),
+    new Package("@apsides/services", "serviceProvider", { customReadme: true, dependencies: ["kompa", "@apsides/events"], strategy: "esbuild" }),
+    new Package("@apsides/foundation", "foundation", { customReadme: true, dependencies: ["@apsides/object-description", "@apsides/services"], strategy: "esbuild" }),
+    new Package("@apsides/rpc", "structRpc", { customReadme: true, dependencies: ["@apsides/struct", "@apsides/foundation"], strategy: "esbuild" }),
+    new Package("@apsides/hono-integration", "honoService", { customReadme: true, dependencies: ["@apsides/foundation"], packageMerge: addHono, strategy: "esbuild" }),
+    new Package("@apsides/socket.io-integration", "socketIOTransport", { customReadme: true, dependencies: ["@apsides/foundation"], packageMerge: addSocketIO, strategy: "esbuild" }),
+    new Package("@apsides/rest-integration", "restTransport", { customReadme: true, dependencies: ["@apsides/hono-integration", "@apsides/rpc"], strategy: "esbuild" }),
+    new Package("@apsides/vue-integration", "vueFoundation", { customReadme: true, dependencies: ["@apsides/foundation", "@apsides/ui"] }),
 ]
+const packagesLookup = new Map(packages.map(v => [v.name, v]))
 
 project.script("build-index", async () => {
     /** @type {string[]} */
@@ -132,14 +183,25 @@ project.script("build-index", async () => {
     for (const package of packages) {
         /** @type {string[]} */
         const files = []
-        const path = package.getPath()
-        for await (const dirent of await readdir(path, { withFileTypes: true })) {
-            if (!dirent.isFile()) continue
-            const ext = extname(dirent.name)
-            if (ext != ".ts" && ext != ".tsx") continue
-            const relativePath = "./" + package.folder + "/" + basename(dirent.name, ext)
-            files.push(relativePath)
+        const rootPath = package.getPath()
+
+        async function visit(/** @type {string} */ path) {
+            for await (const dirent of await readdir(path, { withFileTypes: true })) {
+                if (dirent.isDirectory()) {
+                    await visit(join(path, dirent.name))
+                    continue
+                }
+
+                if (!dirent.isFile()) continue
+                const ext = extname(dirent.name)
+                if (dirent.name.endsWith(".d.ts")) continue
+                if (ext != ".ts" && ext != ".tsx") continue
+                const relativePath = "./" + package.folder + "/" + relative(rootPath, join(path, basename(dirent.name, ext)))
+                files.push(relativePath)
+            }
         }
+
+        await visit(rootPath)
 
         const index = "index_" + package.shortName
         indexes.push(index)
@@ -193,7 +255,62 @@ project.script("build-package", async ([packageName]) => {
         await run("yarn vite build")
     }
 
-    const viteBuildPromise = process.env.SKIP_VITE || buildVite()
+    async function buildEsbuild() {
+        const { build } = require("esbuild")
+
+        /** @type {Parameters<typeof build>[0]} */
+        let options = {
+            bundle: true,
+            format: "esm",
+            entryPoints: [viteOptions.entry],
+            outfile: join(viteOptions.outDir, "index.mjs"),
+            sourcemap: true,
+            logLevel: "info",
+            platform: "node",
+            preserveSymlinks: true,
+            packages: "external",
+            define: {
+                "import.meta.env.MODE": JSON.stringify("production"),
+                "import.meta.env.DEV": "false",
+                "import.meta.env.PROD": "true",
+            },
+            supported: {
+                "using": false
+            },
+            external: [...viteOptions.extern.keys()].map(v => "./src/" + v + "/*"),
+            write: false
+        }
+
+        async function buildAndProcess() {
+            const result = await build(options)
+            if (result.outputFiles == null) throw new TypeError()
+            for (const file of result.outputFiles) {
+                let content = file.text
+                if (!file.path.endsWith(".map")) {
+                    for (const [folder, pkg] of viteOptions.extern) {
+                        content = content.replace(new RegExp(`\\.\\./src/${folder}[^"]*`, "g"), pkg)
+                    }
+                }
+
+                await writeFile(file.path, content)
+            }
+        }
+
+        const step1 = buildAndProcess()
+
+        options = {
+            ...options,
+            format: "cjs",
+            outfile: join(viteOptions.outDir, "index.cjs"),
+        }
+
+        const step2 = buildAndProcess()
+
+        await step1
+        await step2
+    }
+
+    const viteBuildPromise = process.env.SKIP_VITE || (package.strategy == "esbuild" ? buildEsbuild() : buildVite())
 
     const version = RESOURCES.getProjectPackageJSON().version
 
@@ -202,15 +319,19 @@ project.script("build-package", async ([packageName]) => {
     /** @type {PackageJson} */
     const packageJSON = {
         name: package.name, version,
-        dependencies: Object.fromEntries(package.dependencies.map(name => [name, version])),
+        dependencies: {},
         devDependencies: {},
         license: "MIT",
         author: "bt7s7k7",
         exports: {
-            ".": {
+            ".": package.strategy == "vite" ? {
                 types: "./index.d.ts",
                 import: "./index.es.js",
                 require: "./index.umd.js"
+            } : {
+                types: "./index.d.ts",
+                import: "./index.mjs",
+                require: "./index.cjs"
             }
         },
         types: "./index.d.ts",
@@ -221,7 +342,7 @@ project.script("build-package", async ([packageName]) => {
         homepage: package.customReadme ? "https://github.com/bt7s7k7/Apsides/blob/master/docs/" + package.shortName + ".md" : repository + "#readme",
     }
 
-    package.packageMerge?.(packageJSON)
+    package.applyDependencies(packageJSON)
 
     const tsConfig = RESOURCES.getProjectTSConfig()
     tsConfig.include?.pop()
@@ -234,6 +355,8 @@ project.script("build-package", async ([packageName]) => {
     await copy(join(typesFolder, package.folder), join(outFolder, package.folder), { replacements, quiet: !process.env.BUILD_DEBUG })
     await copy(join(typesFolder, "index_" + package.shortName + ".d.ts"), join(outFolder, "index.d.ts"), { quiet: !process.env.BUILD_DEBUG })
 
+    await copy(join("src", package.folder), outFolder, { predicate: (path) => path.endsWith(".scss") })
+
     const readme = await readFile(join(constants.projectPath, "docs", package.shortName + ".md")).catch(err => {
         if (err.code != "ENOENT") throw err
 
@@ -245,7 +368,7 @@ project.script("build-package", async ([packageName]) => {
 
     await copy(join(constants.projectPath, "LICENSE.md"), join(outFolder, "LICENSE.md"))
 
-    await package.callback?.(typesFolder, outFolder)
+    await package.executeCallback(typesFolder, outFolder)
 }, { desc: "Builds a package :: Arguments: <name>", argc: 1 })
 
 
