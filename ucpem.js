@@ -10,7 +10,6 @@ const { console } = require("inspector")
 const { createRequire } = require("module")
 
 include("examples/todo/ucpem.js")
-include("analyser/ucpem.js")
 
 project.prefix("src").res("formML",
     github("bt7s7k7/Struct").res("struct"),
@@ -245,7 +244,7 @@ project.script("build-package", async ([packageName]) => {
         if (externPkg == package) continue
         viteOptions.extern.set(externPkg.folder, externPkg.name)
         viteOptions.neighbours.set(externPkg.name, externPkg.umdName)
-        replacements.push([new RegExp("\"\\.\\./" + externPkg.folder + ".*?\"", "g"), "\"" + externPkg.name + "\""])
+        replacements.push([new RegExp(`"(?:\\.\\.\\/)*\\.\\.\\/${externPkg.folder}(?:\\/[^"]*)?"`, "g"), "\"" + externPkg.name + "\""])
     }
 
     async function buildVite() {
@@ -290,7 +289,7 @@ project.script("build-package", async ([packageName]) => {
                 let content = file.text
                 if (!file.path.endsWith(".map")) {
                     for (const [folder, pkg] of viteOptions.extern) {
-                        content = content.replace(new RegExp(`\\.\\./src/${folder}[^"]*`, "g"), pkg)
+                        content = content.replace(new RegExp(`(?:\\.\\.\\/)*\\.\\.\\/src\\/${folder}(?:\\/[^"]*)?(?=")`, "g"), pkg)
                     }
                 }
 
@@ -373,6 +372,17 @@ project.script("build-package", async ([packageName]) => {
     await package.executeCallback(typesFolder, outFolder)
 }, { desc: "Builds a package :: Arguments: <name>", argc: 1 })
 
+project.script("get-dev-resolution-object", async () => {
+    /** @type {Record<string, string>} */
+    const result = {}
+
+    for (const package of packages) {
+        const outFolder = join(constants.projectPath, "pkg-" + package.shortName)
+        result[package.name] = `file:${outFolder}`
+    }
+
+    log(JSON.stringify(result, null, 4))
+}, { desc: "Returns a configuration for project resolution to be used in dependant projects during development" })
 
 project.script("build-all", async () => {
     await run("ucpem run build-index")
@@ -395,7 +405,7 @@ project.script("build-clean", async () => {
 })
 
 project.script("builder", async (args) => {
-    const mode = args[0] == "build" ? "build" : args[0] == "dev" ? "dev" : args[0] == "watch" ? "watch" : args[0] == "vite" ? "vite" : null
+    const mode = args[0] == "build" ? "build" : args[0] == "dev" ? "dev" : args[0] == "watch" ? "watch" : args[0] == "vite" ? "vite" : args[0] == "run" ? "run" : null
     if (mode == null) throw new Error("Invalid mode, expected build, watch or dev")
 
     const root = constants.installPath
@@ -442,7 +452,11 @@ project.script("builder", async (args) => {
         await build(options)
     }
 
-    if (mode == "build") {
+    function runBuild() {
+        return spawn(process.argv[0], ["--enable-source-maps", "--inspect", "./build/index.mjs"], { stdio: "inherit" })
+    }
+
+    if (mode == "build" || mode == "run") {
         const packageJSON = JSON.parse((await readFile(join(root, "package.json"))).toString())
 
         await buildBackend(false)
@@ -462,6 +476,11 @@ project.script("builder", async (args) => {
             },
             main: "index.mjs"
         }, null, 4))
+
+        if (mode == "run") {
+            const child = runBuild()
+            await /** @type {Promise<void>} */(new Promise(v => child.on("exit", () => v())))
+        }
 
         return
     }
@@ -499,7 +518,7 @@ project.script("builder", async (args) => {
 
             if (!shouldExecute) return
 
-            child = spawn(process.argv[0], ["--enable-source-maps", "--inspect", "./build/index.mjs"], { stdio: "inherit" })
+            child = runBuild()
         }
 
         async function rebuildNow(params) {
@@ -574,4 +593,4 @@ project.script("builder", async (args) => {
         run("yarn vite", root)
         await watchBackend()
     }
-}, { desc: "Builds and or executes Node.js project :: Arguments: <build|watch|dev|vite>", argc: 1 })
+}, { desc: "Builds and or executes Node.js project :: Arguments: <build|watch|dev|vite|run>", argc: 1 })
