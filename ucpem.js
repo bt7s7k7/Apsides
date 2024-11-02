@@ -7,8 +7,10 @@ const { extname, basename, relative } = require("path")
 const { readFileSync, statSync } = require("fs")
 const { spawn } = require("child_process")
 const { console } = require("inspector")
+const { createRequire } = require("module")
 
 include("examples/todo/ucpem.js")
+include("analyser/ucpem.js")
 
 project.prefix("src").res("formML",
     github("bt7s7k7/Struct").res("struct"),
@@ -393,13 +395,14 @@ project.script("build-clean", async () => {
 })
 
 project.script("builder", async (args) => {
-    const mode = args[0] == "build" ? "build" : args[0] == "dev" ? "dev" : args[0] == "watch" ? "watch" : null
+    const mode = args[0] == "build" ? "build" : args[0] == "dev" ? "dev" : args[0] == "watch" ? "watch" : args[0] == "vite" ? "vite" : null
     if (mode == null) throw new Error("Invalid mode, expected build, watch or dev")
 
     const root = constants.installPath
 
     async function buildBackend(/** @type {boolean} */ isDev, /** @type {import("esbuild").Plugin | null} */ plugin = null) {
-        const { build, context } = require("esbuild")
+        const projectRequire = createRequire(join(root, "ucpem.js"))
+        const { build, context } = projectRequire("esbuild")
 
         await rm(join(root, "build"), { force: true, recursive: true })
 
@@ -463,7 +466,7 @@ project.script("builder", async (args) => {
         return
     }
 
-    async function watchBackend() {
+    async function watchBackend(shouldExecute = true) {
         let lastDate = NaN
         let date = NaN
 
@@ -493,6 +496,8 @@ project.script("builder", async (args) => {
                 child.kill()
                 child = null
             }
+
+            if (!shouldExecute) return
 
             child = spawn(process.argv[0], ["--enable-source-maps", "--inspect", "./build/index.mjs"], { stdio: "inherit" })
         }
@@ -556,12 +561,17 @@ project.script("builder", async (args) => {
     }
 
     if (mode == "watch") {
-        await watchBackend()
+        await watchBackend(false)
         return
     }
 
     if (mode == "dev") {
+        await watchBackend()
+        return
+    }
+
+    if (mode == "vite") {
         run("yarn vite", root)
         await watchBackend()
     }
-}, { desc: "Builds and or executes Node.js project :: Arguments: <build|watch|dev>", argc: 1 })
+}, { desc: "Builds and or executes Node.js project :: Arguments: <build|watch|dev|vite>", argc: 1 })
