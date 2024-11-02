@@ -58,7 +58,21 @@ export class DisposableHandleCollection<T> extends Disposable implements Disposa
 
     protected _handles = new Map<DisposableHandle, T>()
 
-    public addHandle(handle: DisposableHandle, value: T) {
+    public get handles() { return this._handles as ToReadonlyCollection<typeof this._handles> }
+
+    public addHandle(handle: DisposableHandle, value: T): void
+    public addHandle<THandle extends T & { [DISPOSABLE_HANDLE]: DisposableHandle }>(value: THandle): void
+    public addHandle(handleOrValue: any, valueMaybe?: any) {
+        let handle: DisposableHandle, value: T
+
+        if (valueMaybe == undefined) {
+            handle = handleOrValue[DISPOSABLE_HANDLE] as DisposableHandle
+            value = handleOrValue
+        } else {
+            handle = handleOrValue
+            value = valueMaybe
+        }
+
         this._handles.set(handle, value)
         handle.registerUser(this)
     }
