@@ -1,19 +1,28 @@
 import { AUTO_DISPOSE, Disposable } from "./Disposable"
 import { DISPOSABLE_HANDLE, DisposableHandle, DisposableUser } from "./DisposableHandle"
 
+/** Handles event listener registration and delivery of events. */
 export class EventEmitter<T = void> extends Disposable implements DisposableUser {
     public readonly [AUTO_DISPOSE] = true
 
+    /** All listeners that will receive an event when emitted. */
     protected readonly _listeners = new Map<number, EventEmitter.Listener<T>>
+    /** Counter for assigning unique IDs to listeners. */
     protected _nextId = 0
 
+    /** Used for debouncing, stores the amount of time this object will wait before emitting an event. */
     protected readonly _timeout: number
+    /** If this emitter is synchronous. */
     protected readonly _sync: boolean
+    /** If this emitter is asynchronous, only the latest event will be delivered. If this emitter is synchronous, this value is ignored. */
     protected readonly _deduplicate: boolean
 
+    /** Used for debouncing, ID of the latest registered timeout or null if there aren't any */
     protected _timeoutID: any = null
+    /** Next event that will be delivered. Only used for async emitters with deduplication or debounced emitters. */
     protected _nextEvent: T | null = null
 
+    /** Adds a listener that will be notified when an event is emitted. If the `handle` is not `null` the listener will be automatically removed when the handle is disposed. */
     public add<TOwner extends Disposable>(handle: EventEmitter.Handle<TOwner>, handler: EventEmitter.Handler<T, TOwner>, options?: { once?: boolean }) {
         const id = this._nextId++
 
@@ -31,10 +40,12 @@ export class EventEmitter<T = void> extends Disposable implements DisposableUser
         return id as EventEmitter.EventBinding
     }
 
+    /** Creates a new promise that will be resolved as soon as an event is emitted. If the `handle` is not `null` the listener will be automatically removed when the handle is disposed. */
     public asPromise(handle: EventEmitter.Handle<Disposable> = null) {
         return new Promise((resolve) => this.add(handle, resolve, { once: true }))
     }
 
+    /** Emits the event synchronously right now. */
     protected _emit(event: T) {
         for (const id of this._listeners.keys()) {
             const listener = this._listeners.get(id)
@@ -49,6 +60,7 @@ export class EventEmitter<T = void> extends Disposable implements DisposableUser
         }
     }
 
+    /** Emits the event */
     public emit(event: T) {
         if (this._timeout != 0) {
             this._nextEvent = event!
@@ -82,6 +94,7 @@ export class EventEmitter<T = void> extends Disposable implements DisposableUser
         }
     }
 
+    /** Removes a listener by id. */
     public remove(binding: EventEmitter.EventBinding) {
         const listener = this._listeners.get(binding)
         if (listener == null) return false
@@ -129,16 +142,21 @@ export namespace EventEmitter {
         deduplicate?: boolean
     }
 
+    /** Object that owns a listener. When it is disposed, all its listeners are also disposed. */
     export type Handle<T extends Disposable> = DisposableHandle<T> | { [DISPOSABLE_HANDLE]: DisposableHandle<T> } | null
 
+    /** Callback function that will be called when a event is emitted. */
     export type Handler<T, TSelf> = (event: T, self: TSelf) => void
 
+    /** Information about an event listener. */
     export interface Listener<T> {
         handle: DisposableHandle | null
         callback: Handler<T, Disposable | null>
+        /** If `true` this listener will be removed after it handles one event */
         once: boolean
     }
 
     declare const EVENT_BINDING: unique symbol
+    /** Stores the ID of an event listener and can be used to remove it from an {@link EventEmitter}. */
     export type EventBinding = { [EVENT_BINDING]: true } & number
 }

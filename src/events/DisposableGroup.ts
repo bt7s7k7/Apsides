@@ -1,9 +1,11 @@
 import { Disposable } from "./Disposable"
 import { EventListener } from "./EventListener"
 
+/** Wrap multiple disposable values to be disposed at once. */
 export class DisposableGroup extends EventListener {
     protected readonly _guarding: Disposable[] = []
 
+    /** Adds a disposable value that will be disposed with this group. */
     public guard(target: Disposable) {
         this._guarding.push(target)
     }
