@@ -28,10 +28,10 @@ function _getResourceName(type: Type<any>) {
 }
 
 export abstract class RestTransport extends MessageTransport {
-    protected readonly _controllers = new Set<typeof Api.Controller>()
+    protected readonly _controllers = new Set<RestTransport.EndpointDefinition>()
     protected readonly _root: string
 
-    public registerController(controller: typeof Api.Controller) {
+    public registerController(controller: RestTransport.EndpointDefinition) {
         this._controllers.add(controller)
     }
 
@@ -113,9 +113,11 @@ export abstract class RestTransport extends MessageTransport {
 }
 
 export namespace RestTransport {
+    export type EndpointDefinition = typeof Api.Controller | typeof Api.Proxy
+
     export interface RouteDefinition {
         method: "get" | "post" | "delete" | "put"
-        controller: typeof Api.Controller
+        controller: EndpointDefinition
         action: Api.ActionType<Type<any>, Type<any>> | null
         params: string[]
         route: string
@@ -125,6 +127,6 @@ export namespace RestTransport {
         /** Endpoints where APIs are going to be. @default "/api" */
         root?: string
         /** Controllers to register with the API. */
-        controllers?: typeof Api.Controller[]
+        controllers?: EndpointDefinition[]
     }
 }

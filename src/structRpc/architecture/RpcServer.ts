@@ -13,6 +13,10 @@ import { ApiConsistencyError, ERR_CONTROLLER_NOT_FOUND } from "../errors"
 import { RpcMessage } from "./RpcMessage"
 import { RpcSession } from "./RpcSession"
 
+import _debug from "debug"
+
+const debug = _debug("apsides:rpc")
+
 export class ControllerBinding implements DisposableUser {
     public removeHandle(handle: DisposableHandle): void {
         if (handle.value != this.controller) throw new ApiConsistencyError("Invalid DisposableHandle provided to ControllerBinding.removeHandle")

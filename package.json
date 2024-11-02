@@ -1,16 +1,16 @@
 {
     "name": "apsides",
-    "version": "1.5.0-alpha",
+    "version": "1.5.0",
     "private": true,
     "devDependencies": {
         "@types/codemirror": "5",
         "@types/debug": "^4.1.12",
+        "@types/node": "^22.8.6",
         "@typescript-eslint/eslint-plugin": "^6.0.0",
         "@typescript-eslint/parser": "^6.0.0",
         "@vitejs/plugin-vue": "^4.2.3",
         "@vitejs/plugin-vue-jsx": "^3.0.1",
         "concurrently": "^8.2.0",
-        "debug": "^4.3.7",
         "dotenv": "^16.3.1",
         "eslint": "^8.53.0",
         "sass": "^1.63.6",
@@ -26,14 +26,16 @@
         "update-favicon": "convert logo.png -resize 32x32 public/favicon.ico"
     },
     "dependencies": {
+        "debug": "^4.3.7",
+        "@hono/node-server": "^1.13.2",
         "@mdi/js": "^7.2.96",
         "codemirror": "5",
-        "vue": "^3.3.4",
-        "vue-router": "^4.2.4",
-        "@hono/node-server": "^1.13.2",
+        "esbuild": "^0.24.0",
         "hono": "^4.6.7",
         "socket.io": "^4.8.1",
-        "socket.io-client": "^4.8.1"
+        "socket.io-client": "^4.8.1",
+        "vue": "^3.3.4",
+        "vue-router": "^4.2.4"
     },
     "optionalDependencies": {
         "bufferutil": "^4.0.8",

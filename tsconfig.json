@@ -18,7 +18,8 @@
             "vite/client"
         ],
         "useDefineForClassFields": false,
-        "outDir": "dist-types"
+        "outDir": "dist-types",
+        "emitDeclarationOnly": true
     },
     "include": [
         "src/**/*.ts",
