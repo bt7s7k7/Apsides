@@ -100,7 +100,7 @@ export class RestTransportClient extends RestTransport {
         if ("kind" in request) {
             if (request.kind == "call") {
                 const call = RpcMessage.ToServer.Call.deserialize(request)
-                return { controller: call.type, action: call.action, argument: call.argument, id: call.id ?? null }
+                return { controller: call.type, action: call.action, argument: call.argument.value, id: call.id ?? null }
             } else if (request.kind == "get") {
                 const get = RpcMessage.ToServer.Get.deserialize(request)
                 return { controller: get.type, action: null, argument: null, id: get.id ?? null }
