@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { existsSync } from "fs"
+import { join } from "path"
 import { ProjectBuilder } from "./ProjectBuilder"
 
 export * from "./config"
@@ -13,5 +15,14 @@ if (require.main == module) {
     if (mode == null) throw new Error("Invalid mode, expected: build, dev, watch, run, vite")
 
     const root = process.cwd()
-    new ProjectBuilder(root).build(mode)
+
+    const builder = new ProjectBuilder(root)
+
+    const configFile = join(root, "builder.js")
+    if (existsSync(configFile)) {
+        const settings = require(configFile)
+        Object.assign(builder, settings)
+    }
+
+    builder.build(mode)
 }

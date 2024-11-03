@@ -6,14 +6,18 @@ import { createRequire } from "module"
 import { join } from "path"
 import { copy, run } from "ucpem"
 
+type BuildOptions = Parameters<(typeof import("esbuild"))["build"]>[0]
+
 export class ProjectBuilder {
+    public modifyOptions: ((options: BuildOptions) => void) | null = null
+
     public async buildBackend(isDev: boolean, watch: boolean, plugin: Plugin | null = null) {
         const projectRequire = createRequire(join(this.root, "ucpem.js"))
         const { build, context } = projectRequire("esbuild") as typeof import("esbuild")
 
         await rm(join(this.root, "build"), { force: true, recursive: true })
 
-        const options: Parameters<typeof build>[0] = {
+        const options: BuildOptions = {
             bundle: true,
             format: "esm",
             entryPoints: ["./src/index.ts"],
@@ -39,6 +43,8 @@ export class ProjectBuilder {
         if (plugin != null) {
             options.plugins = [plugin]
         }
+
+        this.modifyOptions?.(options)
 
         if (watch) {
             const watcher = await context(options)
