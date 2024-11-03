@@ -3,6 +3,7 @@ import { ClientRequest } from "../foundation/messaging/ClientRequest"
 import { ClientError, ERR_SERVER_ERROR } from "../foundation/messaging/errors"
 import { MessageTransport } from "../foundation/messaging/MessageTransport"
 import { HonoServer } from "../honoService/HonoServer"
+import { Optional } from "../index_kompa"
 import { ServiceFactory } from "../serviceProvider/ServiceFactory"
 import { ServiceProvider } from "../serviceProvider/ServiceProvider"
 import { DeferredSerializationValue } from "../struct/DeferredSerializationValue"
@@ -69,7 +70,11 @@ export class RestTransportServer extends RestTransport {
 
                         return c.json(value)
                     } else {
-                        const argumentData = await c.req.json()
+                        const requestBody = await c.req.text()
+                        const argumentData = requestBody == "" ? null : Optional.pcall(() => JSON.parse(requestBody)).unwrapOrError()
+                        if (argumentData instanceof Error) {
+                            throw new ClientError(argumentData.message, { code: ERR_DESERIALIZATION })
+                        }
                         const argument = DeferredSerializationValue.prepareDeserialization(argumentData, new PlainObjectDeserializer(argumentData))
 
                         const request = new ClientRequest(0, new RpcMessage.ToServer.Call({
