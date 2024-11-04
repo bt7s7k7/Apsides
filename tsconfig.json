@@ -19,7 +19,8 @@
         ],
         "useDefineForClassFields": false,
         "outDir": "dist-types",
-        "emitDeclarationOnly": true
+        "emitDeclarationOnly": true,
+        "skipLibCheck": true
     },
     "include": [
         "src/**/*.ts",

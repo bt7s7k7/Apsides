@@ -189,7 +189,7 @@ project.script("clear-resolve", async ([path, verb_1]) => {
 
         for (const target of [package.dependencies, package.devDependencies]) {
             for (const [key, value] of Object.entries(target)) {
-                if (value.startsWith("file:")) {
+                if (value.startsWith("file:/")) {
                     didChanges = true
                     const targetPath = join(dirname(path), "node_modules", key, "package.json")
                     const targetPackage = JSON.parse(await readFile(targetPath, { encoding: "utf-8" }))
