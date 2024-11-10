@@ -16,7 +16,7 @@ export const EditorView = eventDecorator(defineComponent({
         code: { type: String },
         root: { type: Boolean },
         tab: { type: String },
-        mode: { type: String },
+        mode: { type: null },
         localStorageId: { type: String },
         config: { type: Object as PropType<EditorConfiguration> },
         codeRatio: { type: Number },

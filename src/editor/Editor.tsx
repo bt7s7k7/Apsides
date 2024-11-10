@@ -11,7 +11,7 @@ export const Editor = eventDecorator(defineComponent({
     props: {
         content: { type: String, default: "" },
         highlight: { type: Object as PropType<EditorHighlightOptions | null> },
-        mode: { type: String },
+        mode: { type: null },
         config: { type: Object as PropType<EditorConfiguration> }
     },
     emits: {
