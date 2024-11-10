@@ -16,7 +16,7 @@ export class HonoServer {
 
     protected constructor(
         public readonly services: ServiceProvider,
-        options: HonoServer.Options
+        options: HonoServer.Options,
     ) {
         this.app = new Hono(options?.app)
         const logger = services.get(Logger.kind)
@@ -40,7 +40,7 @@ export class HonoServer {
                 const server = new HonoServer(services, options)
                 services.provideService(UNMANAGED_HTTP_SERVER_SERVICE, server.nativeServer)
                 return server
-            }
+            },
         }
     }
 

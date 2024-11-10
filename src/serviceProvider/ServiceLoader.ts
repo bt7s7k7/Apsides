@@ -49,7 +49,7 @@ export class ServiceLoader {
 
     constructor(
         protected readonly _root = new ServiceProvider(null),
-        protected readonly _pending: ServiceProvider._ServiceHandle[] = []
+        protected readonly _pending: ServiceProvider._ServiceHandle[] = [],
     ) { }
 }
 

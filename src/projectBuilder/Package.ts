@@ -52,8 +52,8 @@ export class Package {
             strategy = "vite" as "vite" | "esbuild",
             customReadme = false,
             resource = null as string | null,
-            entryPoint = null as string | null
-        } = {}
+            entryPoint = null as string | null,
+        } = {},
     ) {
         this.name = name
         this.folder = folder

@@ -133,7 +133,7 @@ export class ServiceProvider extends Disposable {
     }
 
     constructor(
-        public readonly parent: ServiceProvider | null
+        public readonly parent: ServiceProvider | null,
     ) {
         super()
 
@@ -151,7 +151,7 @@ export namespace ServiceProvider {
         constructor(
             public readonly kind: ServiceKind<any>,
             public readonly source: ServiceFactory<any> | _ServiceHandle | null,
-            public readonly namespace: ServiceProvider
+            public readonly namespace: ServiceProvider,
         ) { }
     }
 }

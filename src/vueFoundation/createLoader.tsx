@@ -45,7 +45,7 @@ export namespace createLoader {
             name: "Loader",
             setup(props, ctx) {
                 return createLoader(thunk, options)
-            }
+            },
         })
     }
 
@@ -55,13 +55,13 @@ export namespace createLoader {
         return defineComponent({
             name: "Loader",
             props: {
-                id: { type: String, required: true }
+                id: { type: String, required: true },
             },
             setup(props, ctx) {
                 return createLoader((guard) => {
                     return thunk(props.id, guard)
                 }, options)
-            }
+            },
         })
     }
 }

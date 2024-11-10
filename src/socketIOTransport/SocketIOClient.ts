@@ -20,7 +20,7 @@ export class SocketIOClient extends SocketIOTransport {
 
     constructor(
         public readonly services: ServiceProvider,
-        options?: SocketIOClient.Options
+        options?: SocketIOClient.Options,
     ) {
         super()
 

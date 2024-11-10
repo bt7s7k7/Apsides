@@ -1,5 +1,5 @@
 export class ClientError extends Error {
-    override name = "ClientError"
+    public override name = "ClientError"
 
     public readonly code
 
@@ -17,5 +17,5 @@ export class ClientError extends Error {
 export const ERR_SERVER_ERROR = "ERR_SERVER_ERROR"
 
 export class TransportError extends Error {
-    override name = "TransportError"
+    public override name = "TransportError"
 }

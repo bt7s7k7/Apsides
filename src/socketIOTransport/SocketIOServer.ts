@@ -13,7 +13,7 @@ export class SocketIOServer extends EventListener {
     public readonly onConnected = new EventEmitter<SocketIOServer.SocketIOConnection>()
 
     constructor(
-        public readonly services: ServiceProvider
+        public readonly services: ServiceProvider,
     ) {
         super()
 
@@ -49,7 +49,7 @@ export namespace SocketIOServer {
 
         constructor(
             public readonly server: SocketIOServer,
-            public readonly raw: Socket<SocketIOTransportEvents>
+            public readonly raw: Socket<SocketIOTransportEvents>,
         ) {
             super()
 

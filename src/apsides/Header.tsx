@@ -13,5 +13,5 @@ export const Header = (defineComponent({
                 </RouterLink>
             </header>
         )
-    }
+    },
 }))

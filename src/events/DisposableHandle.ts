@@ -42,7 +42,7 @@ export class DisposableHandle<T extends Disposable = Disposable> extends Disposa
 
     constructor(
         /** The value this handle handles. */
-        public value: T
+        public value: T,
     ) { super() }
 }
 

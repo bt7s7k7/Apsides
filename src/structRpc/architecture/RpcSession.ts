@@ -50,7 +50,7 @@ export class RpcSession extends EventListener {
     }
 
     protected constructor(
-        protected readonly _services: ServiceProvider
+        protected readonly _services: ServiceProvider,
     ) {
         super()
 
@@ -62,7 +62,7 @@ export class RpcSession extends EventListener {
 
                     return new RpcMessage.ToClient.Result({
                         kind: "result",
-                        value: DeferredSerializationValue.prepareSerialization(controller, Struct.getType(controller))
+                        value: DeferredSerializationValue.prepareSerialization(controller, Struct.getType(controller)),
                     }).serialize()
                 } else if (data.kind == "bind") {
                     const controller = await this._server.getController(data.type, data.id ?? null)
@@ -71,7 +71,7 @@ export class RpcSession extends EventListener {
                     return new RpcMessage.ToClient.Binding({
                         kind: "binding",
                         value: DeferredSerializationValue.prepareSerialization(controller, Struct.getType(controller)),
-                        bindingId: binding.id
+                        bindingId: binding.id,
                     }).serialize()
                 } else if (data.kind == "unbind") {
                     const binding = this._getBindingById(data.bindingId)
@@ -82,7 +82,7 @@ export class RpcSession extends EventListener {
 
                     const result = new RpcMessage.ToClient.Result({
                         kind: "result",
-                        value
+                        value,
                     })
 
                     if (data.bindResult) {
@@ -103,7 +103,7 @@ export class RpcSession extends EventListener {
 
                     const result = new RpcMessage.ToClient.Result({
                         kind: "result",
-                        value
+                        value,
                     })
 
                     if (data.bindResult) {

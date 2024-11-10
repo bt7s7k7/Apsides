@@ -44,7 +44,7 @@ class _RedirectLogger extends Logger {
     }
 
     constructor(
-        public readonly targets: Logger[]
+        public readonly targets: Logger[],
     ) { super() }
 }
 

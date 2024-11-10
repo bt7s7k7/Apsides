@@ -24,7 +24,7 @@ const _FIELD_DRAWERS = new Map<new (...args: any[]) => FormField, _FieldDrawer<F
 export class FieldDrawerDecorator<T> {
     constructor(
         public readonly name: string,
-        public readonly setup: (props: _FieldProps<T>) => FieldDrawerDecorator.Result
+        public readonly setup: (props: _FieldProps<T>) => FieldDrawerDecorator.Result,
     ) { }
 }
 
@@ -51,7 +51,7 @@ export function getFieldDrawerProps<T>(type: abstract new (...args: any[]) => T)
         binding: { type: Object as PropType<Binding>, required: true },
         base: { type: null, required: true },
         label: { type: String, required: true },
-        path: { type: Object as PropType<_Path>, required: true }
+        path: { type: Object as PropType<_Path>, required: true },
     } as const
 }
 
@@ -100,14 +100,14 @@ export class FieldChangeEvent extends FieldEvent {
 
     constructor(
         path: _Path, basePath: string[] | null | undefined,
-        public readonly value: any
+        public readonly value: any,
     ) { super(path, basePath) }
 }
 
 export class FieldInstantiationEvent extends FieldEvent {
     constructor(
         path: _Path, basePath: string[] | null | undefined,
-        public readonly type: string
+        public readonly type: string,
     ) { super(path, basePath) }
 }
 
@@ -117,7 +117,7 @@ export function useFieldDrawerValue<T = any>(props: Omit<_FieldProps<FormField>,
         set: (value: T) => {
             if (valueFilter) value = valueFilter(value)
             props.binding.setValue(props.base, value)
-        }
+        },
     })
 
     const options = useFieldOptions()
@@ -148,7 +148,7 @@ export const FieldGroup = defineComponent({
     name: "FieldGroup",
     props: {
         merge: { type: Boolean },
-        options: { type: Object as PropType<Partial<FieldOptions>>, required: true }
+        options: { type: Object as PropType<Partial<FieldOptions>>, required: true },
     },
     setup(props, ctx) {
         const options = props.merge ? { ...inject(_FIELD_OPTIONS_KEY), ...props.options } : props.options
@@ -164,7 +164,7 @@ export const FieldDrawer = (defineComponent({
     props: {
         ...getFieldDrawerProps(FormField),
         prefix: { type: Function as PropType<() => any> },
-        fieldOnly: { type: Boolean }
+        fieldOnly: { type: Boolean },
     },
     setup(props, ctx) {
         const field = _FIELD_DRAWERS.get(props.field.constructor as any)
@@ -244,13 +244,13 @@ export const FieldDrawer = (defineComponent({
                 <div data-field={key} key={"field:" + key} class="flex row">{options.prefix?.(props)}{props.prefix?.()}{base()}{options.suffix?.(props)}</div>
             </>
         }
-    }
+    },
 }))
 
 export const ReadonlyFieldDrawer = defineComponent({
     name: "ReadonlyFieldDrawer",
     props: {
-        ...getFieldDrawerProps(ReadonlyField)
+        ...getFieldDrawerProps(ReadonlyField),
     },
     setup(props, ctx) {
         const value = useFieldDrawerValue(props)
@@ -263,7 +263,7 @@ registerFieldDrawer(ReadonlyField, ReadonlyFieldDrawer)
 export const StringFieldDrawer = defineComponent({
     name: "StringFieldDrawer",
     props: {
-        ...getFieldDrawerProps(StringField)
+        ...getFieldDrawerProps(StringField),
     },
     setup(props, ctx) {
         const value = props.field.nullable ? useFieldDrawerValue(props, v => v == "" ? null : v) : useFieldDrawerValue(props)
@@ -281,7 +281,7 @@ registerFieldDrawer(StringField, StringFieldDrawer)
 export const NumberFieldDrawer = defineComponent({
     name: "NumberFieldDrawer",
     props: {
-        ...getFieldDrawerProps(NumberField)
+        ...getFieldDrawerProps(NumberField),
     },
     setup(props, ctx) {
         const field = props.field
@@ -312,7 +312,7 @@ registerFieldDrawer(NumberField, NumberFieldDrawer)
 export const CheckFieldDrawer = defineComponent({
     name: "CheckFieldDrawer",
     props: {
-        ...getFieldDrawerProps(CheckField)
+        ...getFieldDrawerProps(CheckField),
     },
     setup(props, ctx) {
         const value = useFieldDrawerValue(props)
@@ -325,7 +325,7 @@ export const CheckFieldDrawer = defineComponent({
         return () => (
             <input type="checkbox" checked={value.value} onChange={change} />
         )
-    }
+    },
 })
 registerFieldDrawer(CheckField, CheckFieldDrawer)
 
@@ -333,7 +333,7 @@ const _NULL_OPTION = Symbol.for("formBuilder.nullOption")
 export const SelectFieldDrawer = defineComponent({
     name: "SelectFieldDrawer",
     props: {
-        ...getFieldDrawerProps(SelectField)
+        ...getFieldDrawerProps(SelectField),
     },
     setup(props, ctx) {
         const value = useFieldDrawerValue(props, v => v == _NULL_OPTION ? null : v)
@@ -360,20 +360,20 @@ export const SelectFieldDrawer = defineComponent({
                 ))}
             </MenuItem>
         )
-    }
+    },
 })
 registerFieldDrawer(SelectField, SelectFieldDrawer)
 
 export const ObjectFieldDrawer = defineComponent({
     name: "ObjectFieldDrawer",
     props: {
-        ...getFieldDrawerProps(ObjectField)
+        ...getFieldDrawerProps(ObjectField),
     },
     fullLine: true,
     setup(props, ctx) {
         const value = computed({
             get: () => props.binding.getValue(props.base),
-            set: (value) => props.binding.setValue(props.base, value)
+            set: (value) => props.binding.setValue(props.base, value),
         })
 
         const path = props.path
@@ -393,14 +393,14 @@ export const ObjectFieldDrawer = defineComponent({
                 })}
             </div>
         </>
-    }
+    },
 })
 registerFieldDrawer(ObjectField, ObjectFieldDrawer)
 
 export const TableFieldDrawer = defineComponent({
     name: "TableFieldDrawer",
     props: {
-        ...getFieldDrawerProps(TableField)
+        ...getFieldDrawerProps(TableField),
     },
     fullLine: true,
     setup(props, ctx) {
@@ -435,7 +435,7 @@ export const TableFieldDrawer = defineComponent({
                 const baseKey = path.join(".")
                 const suffixProps: _FieldProps<FormField> = {
                     ...props,
-                    path: basePath
+                    path: basePath,
                 }
 
                 return (
@@ -480,7 +480,7 @@ registerFieldDrawer(TableField, TableFieldDrawer)
 export const InfoFieldDrawer = defineComponent({
     name: "InfoFieldDrawer",
     props: {
-        ...getFieldDrawerProps(InfoField)
+        ...getFieldDrawerProps(InfoField),
     },
     noFieldDecoration: true,
     setup(props, ctx) {
@@ -488,21 +488,21 @@ export const InfoFieldDrawer = defineComponent({
             border: "border",
             error: "border border-danger",
             info: "border border-primary",
-            warning: "border border-warning"
+            warning: "border border-warning",
         }
 
         const colors: Record<InfoField["decoration"], string> = {
             border: "default",
             error: "danger",
             info: "primary",
-            warning: "warning"
+            warning: "warning",
         }
 
         const icons: Record<InfoField["decoration"], string | null> = {
             border: null,
             error: mdiAlert,
             info: mdiInformationBox,
-            warning: mdiAlert
+            warning: mdiAlert,
         }
 
         const path = props.path
@@ -520,14 +520,14 @@ export const InfoFieldDrawer = defineComponent({
                 )}
             </div>
         )
-    }
+    },
 })
 registerFieldDrawer(InfoField, InfoFieldDrawer)
 
 export const _NullableFieldDrawer = defineComponent({
     name: "NullableFieldDrawer",
     props: {
-        ...getFieldDrawerProps(NullableField)
+        ...getFieldDrawerProps(NullableField),
     },
     setup(props, ctx) {
         const value = useFieldDrawerValue(props)
@@ -570,7 +570,7 @@ export const NullableFieldDrawer = new FieldDrawerDecorator<NullableField>("Null
     const result: FieldDrawerDecorator.Result = reactive({
         prefix: () => <input type="checkbox" checked={checked.value} onChange={e => checked.value = (e.target as HTMLInputElement).checked} />,
         field: null,
-        placeholder: () => [""]
+        placeholder: () => [""],
     })
 
     watch(checked, () => {

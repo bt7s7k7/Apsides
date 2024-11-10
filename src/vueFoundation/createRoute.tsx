@@ -28,7 +28,7 @@ export const ComponentWithId = (defineComponent({
     name: "ComponentWithId",
     props: {
         component: { type: Object as PropType<any>, required: true },
-        param: { type: String, default: () => "id" }
+        param: { type: String, default: () => "id" },
     },
     setup(props, ctx) {
         const route = useRoute()
@@ -37,7 +37,7 @@ export const ComponentWithId = (defineComponent({
         return () => (
             <props.component id={id.value} key={id.value} />
         )
-    }
+    },
 }))
 
 export function wrapComponentWithId(component: any, param = "id") {

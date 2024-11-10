@@ -31,7 +31,7 @@ export class EventEmitter<T = void> extends Disposable implements DisposableUser
         const listener: EventEmitter.Listener<T> = {
             handle,
             callback: handler as EventEmitter.Handler<T, Disposable | null>,
-            once: options?.once ?? false
+            once: options?.once ?? false,
         }
 
         this._listeners.set(id, listener)

@@ -1,7 +1,7 @@
 /// <reference path="./.vscode/config.d.ts" />
 // @ts-check
 
-const { project, github, join, constants, copy, getProjectDetails, log, include } = require("ucpem")
+const { project, github, join, constants, copy, getProjectDetails, log, include, run } = require("ucpem")
 const { PackageBuilder } = require("./src/projectBuilder/PackageBuilder")
 const { ProjectBuilder } = require("./src/projectBuilder/ProjectBuilder")
 const { multicast } = require("./src/comTypes/util")
@@ -105,7 +105,7 @@ function getPackageBuilder() {
             umdName: "ApsidesUI", packageMerge: addVueDependencies,
             async callback(src, dest) {
                 await copy(join(src, "eventDecorator.d.ts"), join(dest, "eventDecorator.d.ts"))
-            }
+            },
         })
         .addPackage("@apsides/events", "events", { customReadme: true, dependencies: ["kompa"], strategy: "esbuild" })
         .addPackage("@apsides/object-description", "prettyPrint", { customReadme: true, strategy: "esbuild" })
@@ -122,7 +122,7 @@ function getPackageBuilder() {
             },
             async callback(src, dest) {
                 await copy(join(src, "../src/restTransport/page.html"), join(dest, "page.html"))
-            }
+            },
         })
         .addPackage("@apsides/vue-integration", "vueFoundation", { customReadme: true, dependencies: ["@apsides/foundation", "@apsides/ui"], packageMerge: addDebug })
         .addPackage("@apsides/project-builder", "projectBuilder", {
@@ -133,7 +133,7 @@ function getPackageBuilder() {
             packageMerge(pkg) {
                 pkg.bin = { "builder": "./index.cjs" }
                 pkg.dependencies["ucpem"] = "2.9.0"
-            }
+            },
         })
 
     return builder
@@ -166,6 +166,13 @@ project.script("builder", async (args) => {
     const root = constants.installPath
     await new ProjectBuilder(root).build(mode)
 }, { desc: "Builds and or executes Node.js project :: Arguments: <build|watch|dev|vite|run>", argc: 1 })
+
+project.script("publish-all", async () => {
+    const packages = Object.values(getPackageBuilder().getDevResolutionObject())
+    for (const package of packages) {
+        await run("npm publish --dry-run", package.slice(5))
+    }
+}, { desc: "Publishes packages to NPM" })
 
 project.script("clear-resolve", async ([path, verb_1]) => {
     const verb = verb_1 == "apply" ? "apply" : verb_1 == "undo" ? "undo" : null

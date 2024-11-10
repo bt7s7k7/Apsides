@@ -9,31 +9,31 @@ const routes: RouteRecordRaw[] = [
     {
         name: "Home",
         path: "/",
-        component: Home
+        component: Home,
     },
     {
         name: "Form",
         path: "/form",
-        component: FormPage
+        component: FormPage,
     },
     {
         name: "Components",
         path: "/ui",
-        component: ComponentsPage
+        component: ComponentsPage,
     },
     {
         name: "Struct",
         path: "/struct",
-        component: StructPage
+        component: StructPage,
     },
     {
         name: "404",
         component: { setup: () => () => h("pre", { class: "m-4" }, "Page not found") },
-        path: "/:page(.*)*"
-    }
+        path: "/:page(.*)*",
+    },
 ]
 
 export const router = createRouter({
     history: createWebHistory(),
-    routes
+    routes,
 })

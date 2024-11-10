@@ -11,7 +11,7 @@ export abstract class Binding {
 export const Binding_t = new Struct.PolymorphicSerializer<Binding>("Binding")
 
 export class ObjectPropertyBinding extends Struct.define("ObjectPropertyBinding", {
-    property: Type.string
+    property: Type.string,
 }, Binding) {
     public getValue(base: any) {
         return base[this.property]
@@ -28,7 +28,7 @@ export class ObjectPropertyBinding extends Struct.define("ObjectPropertyBinding"
 Binding_t.register(ObjectPropertyBinding)
 
 export class DeepObjectPropertyBinding extends Struct.define("DeepObjectPropertyBinding", {
-    path: Type.string.as(Type.array)
+    path: Type.string.as(Type.array),
 }, Binding) {
     public getValue(base: any) {
         let result = base

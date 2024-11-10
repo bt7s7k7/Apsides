@@ -21,7 +21,5 @@ ucpem run build-all
 If you want to publish the built packages, run:
 
 ```bash
-ucpem run publish-all <version>
+ucpem run publish-all
 ```
-
-Then push the tag and `package.json` changes to GitHub.

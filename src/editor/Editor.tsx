@@ -12,10 +12,10 @@ export const Editor = eventDecorator(defineComponent({
         content: { type: String, default: "" },
         highlight: { type: Object as PropType<EditorHighlightOptions | null> },
         mode: { type: null },
-        config: { type: Object as PropType<EditorConfiguration> }
+        config: { type: Object as PropType<EditorConfiguration> },
     },
     emits: {
-        change: (value: string) => true
+        change: (value: string) => true,
     },
     setup(props, ctx) {
         const editorHost = ref<HTMLElement>()
@@ -48,7 +48,7 @@ export const Editor = eventDecorator(defineComponent({
                 ...props.config,
                 extraKeys: {
                     ...(props.config?.extraKeys as KeyMap | undefined),
-                    "Ctrl-S": () => ctx.emit("change", value)
+                    "Ctrl-S": () => ctx.emit("change", value),
                 },
             })
 
@@ -88,7 +88,7 @@ export const Editor = eventDecorator(defineComponent({
 
             editor.scrollIntoView(start)
             lastHighlight = editor.getDoc().markText(start, end, {
-                className: "bg-warning-translucent"
+                className: "bg-warning-translucent",
             })
         })
 
@@ -97,5 +97,5 @@ export const Editor = eventDecorator(defineComponent({
                 <MountNode node={editorHost.value} />
             </div>
         )
-    }
+    },
 }))

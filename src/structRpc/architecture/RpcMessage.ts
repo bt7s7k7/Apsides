@@ -9,18 +9,18 @@ export namespace RpcMessage {
         export class Bind extends Struct.define("RpcMessage.ToServer.Bind", {
             kind: Type.enum("bind"),
             type: Type.string,
-            id: Type.string.as(Type.nullable)
+            id: Type.string.as(Type.nullable),
         }) { }
 
         export class Get extends Struct.define("RpcMessage.ToServer.Get", {
             kind: Type.enum("get"),
             type: Type.string,
-            id: Type.string.as(Type.nullable)
+            id: Type.string.as(Type.nullable),
         }) { }
 
         export class Unbind extends Struct.define("RpcMessage.ToServer.Get", {
             kind: Type.enum("unbind"),
-            bindingId: Type.number
+            bindingId: Type.number,
         }) { }
 
         export class Call extends Struct.define("RpcMessage.ToServer.Call", {
@@ -29,7 +29,7 @@ export namespace RpcMessage {
             type: Type.string,
             action: Type.string,
             argument: DeferredSerializationValue.ref(),
-            bindResult: Type.boolean.as(Type.nullable, { skipNullSerialize: true })
+            bindResult: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
         }) { }
 
         export class CallBound extends Struct.define("RpcMessage.ToServer.CallBound", {
@@ -37,7 +37,7 @@ export namespace RpcMessage {
             bindingId: Type.number,
             action: Type.string,
             argument: DeferredSerializationValue.ref(),
-            bindResult: Type.boolean.as(Type.nullable, { skipNullSerialize: true })
+            bindResult: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
         }) { }
     }
 
@@ -55,26 +55,26 @@ export namespace RpcMessage {
         export class Result extends Struct.define("RpcMessage.ToClient.Result", {
             kind: Type.enum("result"),
             value: DeferredSerializationValue.ref(),
-            bindingIds: Type.number.as(Type.array).as(Type.nullable, { skipNullSerialize: true })
+            bindingIds: Type.number.as(Type.array).as(Type.nullable, { skipNullSerialize: true }),
         }) { }
 
         export class Binding extends Struct.define("RpcMessage.ToClient.Binding", {
             kind: Type.enum("binding"),
             value: DeferredSerializationValue.ref(),
-            bindingId: Type.number
+            bindingId: Type.number,
         }) { }
 
         export class Event extends Struct.define("RpcMessage.ToClient.Event", {
             kind: Type.enum("event"),
             bindings: Type.number.as(Type.array),
             event: Type.string,
-            value: DeferredSerializationValue.ref()
+            value: DeferredSerializationValue.ref(),
         }) { }
 
         export class Notify extends Struct.define("RpcMessage.ToClient.Notify", {
             kind: Type.enum("notify"),
             bindings: Type.number.as(Type.array),
-            mutations: Mutation_t.base.as(Type.array)
+            mutations: Mutation_t.base.as(Type.array),
         }) { }
     }
 

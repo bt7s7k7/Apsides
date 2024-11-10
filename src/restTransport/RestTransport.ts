@@ -7,7 +7,7 @@ import { Api } from "../structRpc/api/Api"
 
 export class RestResourceNameAttribute {
     constructor(
-        public readonly name: string
+        public readonly name: string,
     ) { }
 }
 
@@ -46,7 +46,7 @@ export abstract class RestTransport extends MessageTransport {
             yield {
                 method: "get", controller, action: null,
                 params: isSingleton ? [] : ["id"],
-                route: isSingleton ? `${this._root}/${resource}` : `${this._root}/${resource}/:id`
+                route: isSingleton ? `${this._root}/${resource}` : `${this._root}/${resource}/:id`,
             }
 
             for (const action of api.actions) {
@@ -88,7 +88,7 @@ export abstract class RestTransport extends MessageTransport {
 
     constructor(
         public readonly services: ServiceProvider,
-        options?: RestTransport.Options
+        options?: RestTransport.Options,
     ) {
         super()
 

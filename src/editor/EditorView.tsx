@@ -21,10 +21,10 @@ export const EditorView = eventDecorator(defineComponent({
         config: { type: Object as PropType<EditorConfiguration> },
         codeRatio: { type: Number },
         state: { type: EditorState as PropType<EditorState>, required: true },
-        toolbarClass: { type: null }
+        toolbarClass: { type: null },
     },
     emits: {
-        compile: (state: EditorState, code: string) => true
+        compile: (state: EditorState, code: string) => true,
     },
     setup(props, ctx) {
         const route = useRoute()
@@ -174,5 +174,5 @@ export const EditorView = eventDecorator(defineComponent({
                 </div>
             </div>
         )
-    }
+    },
 }))

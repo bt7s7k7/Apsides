@@ -9,7 +9,7 @@ import * as api from "../index"
 
 const _ENV: any = {
     computed, defineComponent, h, reactive, ref, shallowRef, watch,
-    mdiDelete, mdiPlus, mdiCog, mdiFileOutline, mdiCircleOutline
+    mdiDelete, mdiPlus, mdiCog, mdiFileOutline, mdiCircleOutline,
 }
 Object.assign<any, any>(_ENV, api)
 
@@ -194,8 +194,8 @@ class ComponentEditorState extends EditorState {
                 name: "output", label: "Output",
                 content: () => (
                     this._component && <this._component />
-                )
-            }
+                ),
+            },
         ]
     }
 
@@ -207,14 +207,14 @@ class ComponentEditorState extends EditorState {
 
         const result = runString({
             source: transpiledSource, env: _ENV,
-            url: "generated:component-editor/" + this._name.value
+            url: "generated:component-editor/" + this._name.value,
         })
 
         this._component = result
     }
 
     constructor(
-        protected readonly _name: Ref<string>
+        protected readonly _name: Ref<string>,
     ) { super() }
 
 }
@@ -224,7 +224,7 @@ export const ComponentEditor = (defineComponent({
     props: {
         name: { type: String, required: true },
         code: { type: String },
-        large: { type: Boolean }
+        large: { type: Boolean },
     },
     setup(props, ctx) {
         const component = shallowRef<any | null>(null)
@@ -259,5 +259,5 @@ export const ComponentEditor = (defineComponent({
                 <div class={["-insert border rounded", props.large ? "h-500" : "h-300"]} ref={placeholder}></div>
             )}
         </>
-    }
+    },
 }))

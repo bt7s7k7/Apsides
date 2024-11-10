@@ -45,9 +45,9 @@ export function useForm<T>(options: ValueFormOptions<T>) {
         form = new Form({
             root: new ObjectField({
                 properties: [
-                    new PropertyInfo({ bind: oldBinding, field: oldRoot, label: options.valueLabel ?? "Value" })
-                ]
-            })
+                    new PropertyInfo({ bind: oldBinding, field: oldRoot, label: options.valueLabel ?? "Value" }),
+                ],
+            }),
         })
 
         binding = new RootBinding()

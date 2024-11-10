@@ -8,7 +8,7 @@ export abstract class FormField { }
 export const FormField_t = new Struct.PolymorphicSerializer<FormField>("FormField")
 
 export class Form extends Struct.define("Form", {
-    root: FormField_t.base
+    root: FormField_t.base,
 }) { }
 
 function _getProperties(type: Type.ObjectType) {
@@ -19,7 +19,7 @@ function _getProperties(type: Type.ObjectType) {
         return new PropertyInfo({
             field,
             label: type.getMetadata().get(LabelAttribute)?.label ?? convertCase(key, "camel", "title"),
-            bind: new ObjectPropertyBinding({ property: key })
+            bind: new ObjectPropertyBinding({ property: key }),
         })
     }).filter(Predicate.notNull())
 }
@@ -29,7 +29,7 @@ export namespace Form {
         const field = getField(type)
         if (field == null) throw new Error(`Cannot create a form for type ${JSON.stringify(type.name)}, specify a "CustomFieldAttribute"`)
         return new Form({
-            root: field
+            root: field,
         })
     }
 
@@ -48,7 +48,7 @@ export namespace Form {
 
         if (Type.isEnum(type)) {
             const select = new SelectField({
-                options: type.entries as Readwrite<typeof type.entries>
+                options: type.entries as Readwrite<typeof type.entries>,
             })
 
             const label = metadata?.get(EnumLabelsAttribute)
@@ -80,8 +80,8 @@ export namespace Form {
                     new PropertyInfo({
                         bind: new RootBinding(),
                         field: elementField,
-                        label: "Value"
-                    })
+                        label: "Value",
+                    }),
                 ]
             }
 
@@ -103,7 +103,7 @@ export namespace Form {
 
             return new NullableField({
                 base: baseField,
-                typeName: type.base.name
+                typeName: type.base.name,
             })
         }
 
@@ -114,12 +114,12 @@ export namespace Form {
 export class PropertyInfo extends Struct.define("PropertyInfo", {
     label: Type.string,
     bind: Binding_t.base,
-    field: FormField_t.base
+    field: FormField_t.base,
 }) { }
 
 export class StringField extends Struct.define("TextField", {
     explicit: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
-    nullable: Type.boolean.as(Type.nullable, { skipNullSerialize: true })
+    nullable: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
 }, FormField) { }
 FormField_t.register(StringField)
 
@@ -128,7 +128,7 @@ export class NumberField extends Struct.define("NumberField", {
     min: Type.number.as(Type.nullable, { skipNullSerialize: true }),
     max: Type.number.as(Type.nullable, { skipNullSerialize: true }),
     explicit: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
-    nullable: Type.boolean.as(Type.nullable, { skipNullSerialize: true })
+    nullable: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
 }, FormField) {
     public static readonly INTEGER = new NumberField({ integer: true })
     public static readonly POSITIVE_INTEGER = new NumberField({ integer: true, min: 0 })
@@ -143,30 +143,30 @@ FormField_t.register(CheckField)
 export class SelectField extends Struct.define("SelectField", {
     options: Type.passthrough<any>(null).as(Type.array),
     labels: Type.string.as(Type.array).as(Type.nullable, { skipNullSerialize: true }),
-    nullable: Type.boolean.as(Type.nullable, { skipNullSerialize: true })
+    nullable: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
 }, FormField) { }
 FormField_t.register(SelectField)
 
 export class ObjectField extends Struct.define("ObjectField", {
-    properties: PropertyInfo.ref().as(Type.array)
+    properties: PropertyInfo.ref().as(Type.array),
 }, FormField) { }
 FormField_t.register(ObjectField)
 
 export class TableField extends Struct.define("TableField", {
     showIndex: Type.boolean,
-    properties: PropertyInfo.ref().as(Type.array)
+    properties: PropertyInfo.ref().as(Type.array),
 }, FormField) { }
 FormField_t.register(TableField)
 
 export class InfoField extends Struct.define("InfoField", {
     text: Type.string,
-    decoration: Type.enum("border", "info", "warning", "error").as(Type.optional)
+    decoration: Type.enum("border", "info", "warning", "error").as(Type.optional),
 }) { }
 FormField_t.register(InfoField)
 
 export class NullableField extends Struct.define("NullableField", {
     base: FormField_t.base,
-    typeName: Type.string
+    typeName: Type.string,
 }) { }
 FormField_t.register(NullableField)
 
@@ -183,7 +183,7 @@ export class CustomFieldAttribute<T extends Type<any> = Type<any>> {
     }
 
     constructor(
-        protected readonly _field: FormField | ((type: T) => FormField)
+        protected readonly _field: FormField | ((type: T) => FormField),
     ) { }
 }
 
@@ -191,7 +191,7 @@ export class TableAttribute {
     public readonly showIndex
 
     constructor(
-        options?: { showIndex?: boolean }
+        options?: { showIndex?: boolean },
     ) {
         this.showIndex = options?.showIndex ?? false
     }
@@ -199,13 +199,13 @@ export class TableAttribute {
 
 export class LabelAttribute {
     constructor(
-        public readonly label: string
+        public readonly label: string,
     ) { }
 }
 
 export class EnumLabelsAttribute {
     constructor(
-        public readonly labels: string[]
+        public readonly labels: string[],
     ) { }
 }
 

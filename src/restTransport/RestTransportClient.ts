@@ -16,7 +16,7 @@ export const ERR_REST_CANNOT_ROUTE_REQUEST = "ERR_REST_CANNOT_ROUTE_REQUEST"
 
 const _Error_t = Type.object({
     code: Type.string,
-    message: Type.string
+    message: Type.string,
 })
 
 export class RestTransportClient extends RestTransport {
@@ -45,7 +45,7 @@ export class RestTransportClient extends RestTransport {
         const baseUrl = new URL(this._root + "/", this._host)
         const url = new URL(path, baseUrl)
         const options: RequestInit = {
-            method: route.method
+            method: route.method,
         }
 
         if (argument != null) {
@@ -91,7 +91,7 @@ export class RestTransportClient extends RestTransport {
         const responseValue = JSON.parse(responseData)
         const result = new RpcMessage.ToClient.Result({
             kind: "result",
-            value: DeferredSerializationValue.prepareSerializationUntyped(responseValue)
+            value: DeferredSerializationValue.prepareSerializationUntyped(responseValue),
         })
         return result.serialize()
     }

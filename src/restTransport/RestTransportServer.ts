@@ -59,7 +59,7 @@ export class RestTransportServer extends RestTransport {
                     if (route.action == null) {
                         const request = new ClientRequest(0, new RpcMessage.ToServer.Get({
                             kind: "get",
-                            type, id
+                            type, id,
                         }).serialize())
 
                         this.onRequest.emit(request)
@@ -112,7 +112,7 @@ export class RestTransportServer extends RestTransport {
         if (options?.documentationPage) {
             const documentationPage = options.documentationPage.replace("$$config", JSON.stringify(JSON.stringify({
                 root: this._root,
-                routes
+                routes,
             })).slice(1, -1))
 
             app.get(this._root, c => {

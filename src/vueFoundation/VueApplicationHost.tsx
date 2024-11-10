@@ -18,5 +18,5 @@ export const VueApplicationHost = (defineComponent({
                 )}
             </DynamicsEmitter>
         )
-    }
+    },
 }))

@@ -21,5 +21,5 @@ export const StructPage = (defineComponent({
                 <ComponentEditor name="struct_example" code={snippets.example} />
             </div>
         )
-    }
+    },
 }))

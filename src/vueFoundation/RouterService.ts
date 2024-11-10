@@ -28,7 +28,7 @@ export class RouterService extends EventListener {
 
     constructor(
         protected readonly _services: ServiceProvider,
-        options: Omit<RouterOptions, "routes"> & Partial<Pick<RouterOptions, "routes">>
+        options: Omit<RouterOptions, "routes"> & Partial<Pick<RouterOptions, "routes">>,
     ) {
         super()
 
@@ -45,10 +45,10 @@ export class RouterService extends EventListener {
                     {
                         name: "404",
                         component: { setup: () => () => h("pre", { class: "m-4" }, "Page not found") },
-                        path: "/:page(.*)*"
+                        path: "/:page(.*)*",
                     },
                 ],
-                history: options.history
+                history: options.history,
             })
 
             if (debug.enabled) {

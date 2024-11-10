@@ -83,7 +83,7 @@ export class Api<T extends Struct.StructStatics = Struct.StructStatics, TApi ext
 
             constructor(
                 public override readonly rpcClient: RpcClient,
-                public override id: string | null = null
+                public override id: string | null = null,
             ) {
                 super(null)
 
@@ -178,7 +178,7 @@ export class Api<T extends Struct.StructStatics = Struct.StructStatics, TApi ext
 
             constructor(
                 public override readonly rpcServer: RpcServer,
-                public override readonly id: string | null
+                public override readonly id: string | null,
             ) {
                 super(null)
 
@@ -204,7 +204,7 @@ export class Api<T extends Struct.StructStatics = Struct.StructStatics, TApi ext
 
     constructor(
         public readonly model: T,
-        api: TApi
+        api: TApi,
     ) {
         for (const value of Object.values(api)) {
             if ("param" in value) {
@@ -326,14 +326,14 @@ export namespace Api {
             public readonly name: string,
             public readonly param: TParam,
             public readonly result: TResult,
-            public readonly desc: string | null
+            public readonly desc: string | null,
         ) { }
     }
 
     export class EventType<T extends Type> {
         constructor(
             public readonly name: string,
-            public readonly type: T
+            public readonly type: T,
         ) { }
     }
 

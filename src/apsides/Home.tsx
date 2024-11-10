@@ -18,7 +18,7 @@ export const Home = (defineComponent({
             { label: "UI Components", icon: mdiButtonPointer, route: { name: "Components" } },
             { label: "Form Builder", icon: mdiFormTextbox, route: { name: "Form" } },
             { label: "Struct", icon: mdiCodeJson, route: { name: "Struct" } },
-            { label: "RPC", icon: mdiAccessPoint, route: { name: "Form" } }
+            { label: "RPC", icon: mdiAccessPoint, route: { name: "Form" } },
         ]
 
         return () => (
@@ -45,5 +45,5 @@ export const Home = (defineComponent({
 
             </div>
         )
-    }
+    },
 }))

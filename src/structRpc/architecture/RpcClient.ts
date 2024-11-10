@@ -32,13 +32,13 @@ export class RpcClient extends EventListener {
             return this._sendRequest(new RpcMessage.ToServer.Call({
                 kind: "call",
                 action, argument, id, type,
-                bindResult: options?.bindResult != null
+                bindResult: options?.bindResult != null,
             }))
         } else {
             return this._sendRequest(new RpcMessage.ToServer.CallBound({
                 kind: "callBound",
                 action, argument, bindingId,
-                bindResult: options?.bindResult != null
+                bindResult: options?.bindResult != null,
             }))
         }
     }
@@ -54,7 +54,7 @@ export class RpcClient extends EventListener {
     protected async _bind(instance: Api.Proxy, type: string, id: string | null) {
         const result = await this._sendRequest(new RpcMessage.ToServer.Bind({
             kind: "bind",
-            type, id
+            type, id,
         }))
 
         this._boundProxies.set(result.bindingId, instance)
@@ -67,14 +67,14 @@ export class RpcClient extends EventListener {
 
         return this._sendRequest(new RpcMessage.ToServer.Unbind({
             kind: "unbind",
-            bindingId
+            bindingId,
         }))
     }
 
     protected _sync(type: string, id: string | null) {
         return this._sendRequest(new RpcMessage.ToServer.Get({
             kind: "get",
-            type, id
+            type, id,
         }))
     }
 
@@ -88,7 +88,7 @@ export class RpcClient extends EventListener {
     }
 
     protected constructor(
-        protected readonly _services: ServiceProvider
+        protected readonly _services: ServiceProvider,
     ) {
         super()
         this._transport.onNotification.add(this, (messageData) => {

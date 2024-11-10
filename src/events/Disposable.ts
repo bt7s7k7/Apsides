@@ -3,7 +3,7 @@ export const AUTO_DISPOSE = Symbol.for("apsides.events.auto-dispose")
 
 /** Extend this class to comply with the disposable object protocol. */
 export class Disposable {
-    [Symbol.dispose]() {
+    public [Symbol.dispose]() {
         defaultDisposeAction(this)
     }
 }

@@ -45,7 +45,7 @@ const _SNIPPETS_IMPORT: Plugin = {
 
         return {
             code: `export default JSON.parse(${JSON.stringify(resultJSON)})`,
-            map: { mappings: "" }
+            map: { mappings: "" },
         }
     },
 }
@@ -55,7 +55,7 @@ const LibDef_t = Type.object({
     entry: Type.string,
     extern: Type.string.as(Type.map),
     neighbours: Type.string.as(Type.map),
-    outDir: Type.string
+    outDir: Type.string,
 })
 
 export type LibDef = Type.Extract<typeof LibDef_t>
@@ -68,11 +68,11 @@ export default defineConfig(() => {
     const config: UserConfigExport = {
         plugins: [
             _SNIPPETS_IMPORT,
-            vue(), vueJsx()
+            vue(), vueJsx(),
         ],
         resolve: {
             preserveSymlinks: true,
-            alias: []
+            alias: [],
         },
         server: {
             port: +(process.env.PORT ?? 8080),
@@ -80,7 +80,7 @@ export default defineConfig(() => {
                 "^/api": { target: process.env.BACKEND_URL, changeOrigin: true },
             } */
         },
-        build: {}
+        build: {},
     }
 
     const options = Optional.value(process.env.LIB_OPTIONS).do(v => v == null ? null : LibDef_t.deserialize(JSON.parse(v))).unwrap()
@@ -102,7 +102,7 @@ export default defineConfig(() => {
             lib: {
                 entry: options.entry,
                 name: options.name,
-                fileName: (format) => `index.${format}.js`
+                fileName: (format) => `index.${format}.js`,
             },
             rollupOptions: {
                 external: ["vue", "vue-router", ...options.extern.values()],
@@ -110,11 +110,11 @@ export default defineConfig(() => {
                     globals: {
                         vue: "Vue",
                         "vue-router": "VueRouter",
-                        ...Object.fromEntries(options.neighbours)
-                    }
-                }
+                        ...Object.fromEntries(options.neighbours),
+                    },
+                },
             },
-            outDir: options.outDir
+            outDir: options.outDir,
         })
 
         for (const [folder, pkg] of options.extern) {

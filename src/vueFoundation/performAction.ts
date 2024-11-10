@@ -5,8 +5,8 @@ import { DynamicsEmitter } from "../vue3gui/DynamicsEmitter"
 export async function performAction<TResult>(emitter: DynamicsEmitter, action: () => Promise<TResult>, label: string) {
     const work = emitter.work(label, {
         props: {
-            debounce: true
-        }
+            debounce: true,
+        },
     })
     try {
         const result = await action().catch(asError)

@@ -31,7 +31,7 @@ export class ControllerBinding implements DisposableUser {
         public readonly id: number,
         public readonly server: RpcServer,
         public controller: Api.Controller | null,
-        public readonly session: RpcSession | null
+        public readonly session: RpcSession | null,
     ) { }
 
 }
@@ -109,7 +109,7 @@ export class RpcServer extends EventListener {
         for (const [session, bindings] of this._collectUsers(controller)) {
             session["_sendMessage"](new RpcMessage.ToClient.Notify({
                 kind: "notify",
-                bindings, mutations
+                bindings, mutations,
             }))
         }
     }
@@ -118,7 +118,7 @@ export class RpcServer extends EventListener {
         for (const [session, bindings] of this._collectUsers(controller)) {
             session["_sendMessage"](new RpcMessage.ToClient.Event({
                 kind: "event",
-                bindings, event, value
+                bindings, event, value,
             }))
         }
     }
@@ -144,7 +144,7 @@ export class RpcServer extends EventListener {
     }
 
     protected constructor(
-        public readonly services: ServiceProvider
+        public readonly services: ServiceProvider,
     ) { super() }
 
     public static readonly kind = new ServiceKind<RpcServer>("RpcServer")

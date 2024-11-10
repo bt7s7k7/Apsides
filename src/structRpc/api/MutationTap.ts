@@ -13,7 +13,7 @@ class _ChangedEmitter<T extends Api.Controller = any> extends EventEmitter<Reado
     }
 
     constructor(
-        public readonly tap: MutationTap<T>
+        public readonly tap: MutationTap<T>,
     ) { super({ deduplicate: true }) }
 }
 
@@ -49,7 +49,7 @@ export class MutationTap<T extends Api.Controller = any> extends EventListener {
 
     constructor(
         public readonly server: RpcServer,
-        public readonly type: string
+        public readonly type: string,
     ) { super() }
 }
 

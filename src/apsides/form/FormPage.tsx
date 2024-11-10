@@ -46,5 +46,5 @@ export const FormPage = (defineComponent({
                 <div class="h-500"></div>
             </div>
         )
-    }
+    },
 }))

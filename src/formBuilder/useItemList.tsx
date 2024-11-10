@@ -101,7 +101,7 @@ export function useItemList<T>(options: ItemListOptions<T>) {
 
     const searchQuery = ref("")
     const searchQueryDebounced = useDebounce(searchQuery, {
-        delay: options.searchDebounceTimeout ?? 100
+        delay: options.searchDebounceTimeout ?? 100,
     })
 
     const itemsFiltered = computed(() => {
@@ -202,7 +202,7 @@ export function useItemList<T>(options: ItemListOptions<T>) {
         },
         get searchQuery() { return searchQueryDebounced.value },
         set searchQuery(value) { searchQuery.value = value; searchQueryDebounced.updateNow() },
-        selected: null
+        selected: null,
     })
     return list
 }
@@ -227,7 +227,7 @@ export function useSearchPopup<T>(options: SearchPopupOptions<T>) {
                         onClick(...args) {
                             menu.controller.close()
                             options.list.onClick?.(...args)
-                        }
+                        },
                     })
 
                     return () => (
@@ -240,9 +240,9 @@ export function useSearchPopup<T>(options: SearchPopupOptions<T>) {
                     noTransition: true,
                     class: "bg-white rounded border",
                     noDefaultStyle: true,
-                    ...options.modalOptions
-                }
+                    ...options.modalOptions,
+                },
             })
-        }
+        },
     }
 }

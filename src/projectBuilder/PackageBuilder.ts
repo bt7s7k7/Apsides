@@ -38,7 +38,7 @@ export class PackageBuilder {
     }
 
     protected _projectTSConfig: TSConfig | null = null
-    getProjectTSConfig() {
+    public getProjectTSConfig() {
         return this._projectTSConfig ??= JSON.parse(readFileSync(join(this.root, "tsconfig.json")).toString()) as never
     }
 
@@ -108,7 +108,7 @@ export class PackageBuilder {
             entry: pkg.entryPoint ?? join("src", "index_" + pkg.shortName + ".ts"),
             extern: new Map(),
             neighbours: new Map(),
-            outDir: outFolder
+            outDir: outFolder,
         }
 
         const replacements: Parameters<typeof copy>[2] = []
@@ -148,10 +148,10 @@ export class PackageBuilder {
                     "import.meta.env.PROD": "true",
                 },
                 supported: {
-                    "using": false
+                    "using": false,
                 },
                 external: [...viteOptions.extern.keys()].map(v => "./src/" + v + "/*"),
-                write: false
+                write: false,
             }
 
             async function buildAndProcess() {
@@ -199,17 +199,17 @@ export class PackageBuilder {
                 ".": pkg.strategy == "vite" ? {
                     types: "./index.d.ts",
                     import: "./index.es.js",
-                    require: "./index.umd.js"
+                    require: "./index.umd.js",
                 } : {
                     types: "./index.d.ts",
                     import: "./index.mjs",
-                    require: "./index.cjs"
-                }
+                    require: "./index.cjs",
+                },
             },
             types: "./index.d.ts",
             repository: {
                 type: "git",
-                url: "git+" + repository
+                url: "git+" + repository,
             },
             homepage: pkg.customReadme ? this.repository + "/blob/master/docs/" + pkg.shortName + ".md" : repository + "#readme",
         }
@@ -308,6 +308,6 @@ export class PackageBuilder {
     constructor(
         public readonly root: string,
         public readonly project: ProjectDetails,
-        public readonly repository: string
+        public readonly repository: string,
     ) { }
 }

@@ -59,7 +59,7 @@ export abstract class SocketIOTransport extends MessageTransport {
                     callback(ERR_SERVER_ERROR, "Internal server error")
                     throw error
                 }
-            }
+            },
         )
         this.onRequest.emit(requestHandle)
     }

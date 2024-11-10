@@ -33,11 +33,11 @@ export class ProjectBuilder {
                 "import.meta.env.PROD": JSON.stringify(!isDev),
             },
             supported: {
-                "using": false
+                "using": false,
             },
             loader: {
-                ".html": "text"
-            }
+                ".html": "text",
+            },
         }
 
         if (plugin != null) {
@@ -69,7 +69,7 @@ export class ProjectBuilder {
                     lastDate = date
                     date = statSync("./build/index.mjs").ctimeMs
                 })
-            }
+            },
         })
 
         let child: ChildProcess | null = null
@@ -176,9 +176,9 @@ export class ProjectBuilder {
                 devDependencies: undefined,
                 dependencies: undefined,
                 scripts: {
-                    "start": "node --enable-source-maps index.mjs"
+                    "start": "node --enable-source-maps index.mjs",
                 },
-                main: "index.mjs"
+                main: "index.mjs",
             }, null, 4))
 
             return
@@ -201,6 +201,6 @@ export class ProjectBuilder {
     }
 
     constructor(
-        public readonly root: string
+        public readonly root: string,
     ) { }
 }

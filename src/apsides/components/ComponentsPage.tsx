@@ -20,7 +20,7 @@ export const ComponentsPage = (defineComponent({
                         contain: true,
                         contentClass: "passthrough",
                         noDefaultStyle: true,
-                        background: "clear"
+                        background: "clear",
                     },
                 })
             }
@@ -122,5 +122,5 @@ export const ComponentsPage = (defineComponent({
                 <div class="h-500"></div>
             </div>
         )
-    }
+    },
 }))
