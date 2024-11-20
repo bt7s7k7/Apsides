@@ -10,6 +10,7 @@ type BuildOptions = Parameters<(typeof import("esbuild"))["build"]>[0]
 
 export class ProjectBuilder {
     public modifyOptions: ((options: BuildOptions) => void) | null = null
+    public runArguments = ["--enable-source-maps", "--inspect", "./build/index.mjs"]
 
     public async buildBackend(isDev: boolean, watch: boolean, plugin: Plugin | null = null) {
         const projectRequire = createRequire(join(this.root, "ucpem.js"))
@@ -55,7 +56,7 @@ export class ProjectBuilder {
     }
 
     public runBuild() {
-        return spawn(process.argv[0], ["--enable-source-maps", "--inspect", "./build/index.mjs"], { stdio: "inherit" })
+        return spawn(process.argv[0], this.runArguments, { stdio: "inherit" })
     }
 
     public async watchBackend(shouldExecute = true) {
@@ -103,6 +104,12 @@ export class ProjectBuilder {
         }
 
         async function rebuild() {
+            if (!shouldExecute) {
+                rebuildNow().then(() => {
+                    log("Reloaded due to changes.")
+                })
+            }
+
             if (debounceTimerId != null) {
                 clearTimeout(debounceTimerId)
             }
