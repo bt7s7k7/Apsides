@@ -4,6 +4,7 @@ import { ComponentsPage } from "../apsides/components/ComponentsPage"
 import { StructPage } from "../apsides/struct/StructPage"
 import { FormPage } from "../apsides/form/FormPage"
 import { Home } from "../apsides/Home"
+import { EditorPage } from "../apsides/EditorPage"
 
 const routes: RouteRecordRaw[] = [
     {
@@ -15,6 +16,11 @@ const routes: RouteRecordRaw[] = [
         name: "Form",
         path: "/form",
         component: FormPage,
+    },
+    {
+        name: "Editor",
+        path: "/editor",
+        component: EditorPage,
     },
     {
         name: "Components",
