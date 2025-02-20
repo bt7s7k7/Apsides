@@ -3,26 +3,32 @@ import { Plugin } from "esbuild"
 import { statSync } from "fs"
 import { readFile, rm, writeFile } from "fs/promises"
 import { createRequire } from "module"
-import { join } from "path"
+import { join, relative, resolve } from "path"
 import { copy, run } from "ucpem"
 
 type BuildOptions = Parameters<(typeof import("esbuild"))["build"]>[0]
 
 export class ProjectBuilder {
     public modifyOptions: ((options: BuildOptions) => void) | null = null
-    public runArguments = ["--enable-source-maps", "--inspect", "./build/index.mjs"]
+    public runArguments = ["--enable-source-maps", "--inspect", "$OUTFILE"]
+    public entryPoint = "./src/index.ts"
+    public outFile = "./build/index.mjs"
 
     public async buildBackend(isDev: boolean, watch: boolean, plugin: Plugin | null = null) {
         const projectRequire = createRequire(join(this.root, "ucpem.js"))
         const { build, context } = projectRequire("esbuild") as typeof import("esbuild")
 
-        await rm(join(this.root, "build"), { force: true, recursive: true })
+        const outFileFolder = resolve(this.root, this.outFile)
+        const outFilePath = relative(this.root, outFileFolder)
+        if (!outFilePath.startsWith("..") && outFilePath.includes("/")) {
+            await rm(join(this.root, "build"), { force: true, recursive: true })
+        }
 
         const options: BuildOptions = {
             bundle: true,
             format: "esm",
-            entryPoints: ["./src/index.ts"],
-            outfile: "build/index.mjs",
+            entryPoints: [this.entryPoint],
+            outfile: this.outFile,
             sourcemap: true,
             logLevel: isDev ? "silent" : "info",
             platform: "node",
@@ -56,7 +62,8 @@ export class ProjectBuilder {
     }
 
     public runBuild() {
-        return spawn(process.argv[0], this.runArguments, { stdio: "inherit" })
+        const runArguments = this.runArguments.map(v => v == "$OUTFILE" ? this.outFile : v)
+        return spawn(process.argv[0], runArguments, { stdio: "inherit" })
     }
 
     public async watchBackend(shouldExecute = true) {
@@ -65,10 +72,10 @@ export class ProjectBuilder {
 
         const esbuildContext = await this.buildBackend(true, true, {
             name: "watch-runner",
-            setup(build) {
+            setup: (build) => {
                 build.onEnd(() => {
                     lastDate = date
-                    date = statSync("./build/index.mjs").ctimeMs
+                    date = statSync(this.outFile).ctimeMs
                 })
             },
         })
