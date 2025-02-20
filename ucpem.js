@@ -2,9 +2,6 @@
 // @ts-check
 
 const { project, github, join, constants, copy, getProjectDetails, log, include, run } = require("ucpem")
-const { PackageBuilder } = require("./src/projectBuilder/PackageBuilder")
-const { ProjectBuilder } = require("./src/projectBuilder/ProjectBuilder")
-const { multicast } = require("./src/comTypes/util")
 const { readFile, writeFile, rm } = require("fs/promises")
 const { dirname } = require("path")
 
@@ -64,6 +61,8 @@ project.prefix("src").res("structRpc",
 project.prefix("src").res("projectBuilder")
 
 function getPackageBuilder() {
+    const { PackageBuilder } = require("./src/projectBuilder/PackageBuilder")
+    const { multicast } = require("./src/comTypes/util")
     const builder = new PackageBuilder(constants.projectPath, getProjectDetails(), "https://github.com/bt7s7k7/Apsides")
 
     /** @typedef {import("./src/projectBuilder/config").PackageJson} PackageJson */
@@ -160,6 +159,8 @@ project.script("build-clean", async () => {
 })
 
 project.script("builder", async (args) => {
+    const { ProjectBuilder } = require("./src/projectBuilder/ProjectBuilder")
+
     const mode = args[0] == "build" ? "build" : args[0] == "dev" ? "dev" : args[0] == "watch" ? "watch" : args[0] == "vite" ? "vite" : args[0] == "run" ? "run" : null
     if (mode == null) throw new Error("Invalid mode, expected build, watch or dev")
 
