@@ -4,6 +4,7 @@ import { ServiceKind } from "../serviceProvider/ServiceFactory"
 import { ServiceProvider } from "../serviceProvider/ServiceProvider"
 import { Type } from "../struct/Type"
 import { Api } from "../structRpc/api/Api"
+import { Handle } from "../structRpc/api/Handle"
 
 export class RestResourceNameAttribute {
     constructor(
@@ -113,7 +114,7 @@ export abstract class RestTransport extends MessageTransport {
 }
 
 export namespace RestTransport {
-    export type EndpointDefinition = typeof Api.Controller | typeof Api.Proxy
+    export type EndpointDefinition = typeof Api.Controller | typeof Handle
 
     export interface RouteDefinition {
         method: "get" | "post" | "delete" | "put"

@@ -1,9 +1,8 @@
-import { TodoListApi } from "./TodoList"
+import { TodoList } from "./TodoList"
 
-
-export class TodoListController extends TodoListApi.makeController() {
+export class TodoListController extends TodoList.api.makeController() {
     static {
-        TodoListApi.makeControllerImpl(this, {
+        TodoList.api.makeControllerImpl(this, {
             async setLabel(label) {
                 this._mutate(v => v.label = label)
             }

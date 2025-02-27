@@ -19,7 +19,9 @@
             "node"
         ],
         "useDefineForClassFields": false,
-        "outDir": "dev"
+        "outDir": "dev",
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true
     },
     "include": [
         "src/**/*.ts",

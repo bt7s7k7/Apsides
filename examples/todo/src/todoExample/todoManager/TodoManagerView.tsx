@@ -14,15 +14,15 @@ import { createRoute } from "../../vueFoundation/createRoute"
 import { performAction } from "../../vueFoundation/performAction"
 import { TodoList } from "../todoList/TodoList"
 import { TODO_LIST_VIEW } from "../todoList/TodoListView"
-import { TodoListInfo } from "./TodoManager"
-import { TodoManagerProxy } from "./TodoManagerProxy"
+import { TodoListInfo, TodoManager } from "./TodoManager"
+import { TODO_MANAGER_HANDLE } from "./TodoManagerHandle"
 
 const TodoListInit_t = Type.pick(TodoList.baseType, "label")
 
 export const TodoManagerView = (defineComponent({
     name: "TodoManagerView",
     props: {
-        manager: { type: TodoManagerProxy, required: true }
+        manager: { type: TodoManager, required: true }
     },
     setup(props, ctx) {
         const emitter = useDynamicsEmitter()
@@ -100,7 +100,7 @@ export const TODO_MANAGER_VIEW = createRoute({
     path: "/",
     component: createLoader.withComponent(async (guard) => {
         const services = useServiceProvider()
-        const manager = services.get(TodoManagerProxy.kind)
+        const manager = services.get(TODO_MANAGER_HANDLE.kind)
 
         return () => <TodoManagerView manager={manager} />
     }, { overlayProps: { class: "flex-fill flex column" } })

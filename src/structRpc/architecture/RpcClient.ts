@@ -4,30 +4,37 @@ import { ServiceFactory, ServiceKind } from "../../serviceProvider/ServiceFactor
 import { ServiceProvider } from "../../serviceProvider/ServiceProvider"
 import { DeferredSerializationValue } from "../../struct/DeferredSerializationValue"
 import { Api } from "../api/Api"
+import { Handle } from "../api/Handle"
+import { RpcProtocol } from "../api/RpcProtocol"
 import { ApiConsistencyError } from "../errors"
 import { RpcMessage } from "./RpcMessage"
 
-export class RpcClient extends EventListener {
+export class RpcClient extends EventListener implements RpcProtocol {
     protected readonly _transport = this._services.get(MessageTransport.kind)
-    protected readonly _boundProxies = new Map<number, Api.Proxy>()
+    protected readonly _boundHandles = new Map<number, Handle>()
 
-    public getEmptyProxy<T extends typeof Api.Proxy>(type: T, id: string | null = null) {
-        return new type(this, id) as InstanceType<T>
+    public getEmptyHandle<T extends new (...args: any[]) => Handle>(type: T, id: string | null = null) {
+        const handle = new (type as never as new () => Handle)() as InstanceType<T>
+        if (id != null) (handle as { id: string }).id = id
+        handle.connect(this)
+        return handle
     }
 
-    public async getProxy<T extends typeof Api.Proxy>(type: T, id: string | null = null) {
-        const instance = new type(this, id) as InstanceType<T>
-        await instance.sync()
-        return instance
+    public async getHandle<T extends new (...args: any[]) => Handle>(type: T, id: string | null = null) {
+        const handle = new (type as never as new () => Handle)() as InstanceType<T>
+        if (id != null) (handle as { id: string }).id = id
+        await handle.connect(this).sync()
+        return handle
     }
 
-    public async getBoundProxy<T extends typeof Api.Proxy>(type: T, id: string | null = null) {
-        const instance = new type(this, id) as InstanceType<T>
-        await instance.bind()
-        return instance
+    public async getBoundHandle<T extends new (...args: any[]) => Handle>(type: T, id: string | null = null) {
+        const handle = new (type as never as new () => Handle)() as InstanceType<T>
+        if (id != null) (handle as { id: string }).id = id
+        await handle.connect(this).bind()
+        return handle
     }
 
-    protected _call(type: string, id: string | null, bindingId: number | null, action: string, argument: DeferredSerializationValue, options?: Api.CallOptions) {
+    public performCall(type: string, id: string | null, bindingId: number | null, action: string, argument: DeferredSerializationValue, options?: Api.CallOptions) {
         if (bindingId == null) {
             return this._sendRequest(new RpcMessage.ToServer.Call({
                 kind: "call",
@@ -43,45 +50,50 @@ export class RpcClient extends EventListener {
         }
     }
 
-    protected _createProxyFromResult(type: typeof Api.Proxy, result: any, bindingId: number) {
-        const instance = new type(this, result.id)
+    public createHandleDirectly(type: new (...args: any[]) => Handle, result: any, bindingId: number) {
+        const instance = new (type as never as new () => Handle)()
         Object.assign(instance, result)
-        instance["_rpcBindingId"] = bindingId
-        this._boundProxies.set(bindingId, instance)
-        return instance
+
+        instance["_bindingId"] = bindingId
+        instance["_protocol"] = this
+
+        this._boundHandles.set(bindingId, instance)
+        return instance as Handle
     }
 
-    protected async _bind(instance: Api.Proxy, type: string, id: string | null) {
+    public async initBinding(instance: Handle, type: string, id: string | null) {
         const result = await this._sendRequest(new RpcMessage.ToServer.Bind({
             kind: "bind",
             type, id,
         }))
 
-        this._boundProxies.set(result.bindingId, instance)
+        this._boundHandles.set(result.bindingId, instance)
 
         return result
     }
 
-    protected _unbind(bindingId: number) {
-        if (!this._boundProxies.delete(bindingId)) throw new ApiConsistencyError("Call to RpcClient._unbind with an invalid bindingId")
+    public async removeBinding(bindingId: number) {
+        if (!this._boundHandles.delete(bindingId)) throw new ApiConsistencyError("Call to RpcClient._unbind with an invalid bindingId")
 
-        return this._sendRequest(new RpcMessage.ToServer.Unbind({
+        await this._sendRequest(new RpcMessage.ToServer.Unbind({
             kind: "unbind",
             bindingId,
         }))
     }
 
-    protected _sync(type: string, id: string | null) {
+    public syncHandle(type: string, id: string | null) {
         return this._sendRequest(new RpcMessage.ToServer.Get({
             kind: "get",
             type, id,
         }))
     }
 
-    protected async _sendRequest<T extends RpcMessage.ToServer>(request: T): Promise<T["kind"] extends "bind" ? RpcMessage.ToClient.Binding : RpcMessage.ToClient.Result> {
+    protected async _sendRequest<T extends RpcMessage.ToServer>(request: T): Promise<T["kind"] extends "bind" ? RpcMessage.ToClient.Binding : T["kind"] extends "unbind" ? null : RpcMessage.ToClient.Result> {
         const response = await this._transport.sendRequest(request.serialize())
         if (request.kind == "bind") {
             return RpcMessage.ToClient.Binding.deserialize(response) as any
+        } else if (request.kind == "unbind") {
+            return null as any
         } else {
             return RpcMessage.ToClient.Result.deserialize(response) as any
         }
@@ -93,21 +105,21 @@ export class RpcClient extends EventListener {
         super()
         this._transport.onNotification.add(this, (messageData) => {
             const message = RpcMessage.ToClient_t.deserialize(messageData)
-            const affectedProxies: Api.Proxy[] = []
+            const affectedHandles: Handle[] = []
 
             for (const id of message.bindings) {
-                const proxy = this._boundProxies.get(id)
-                if (proxy == null) throw new ApiConsistencyError(`Received ${message.kind} message referencing an invalid binding id ${id}`)
-                affectedProxies.push(proxy)
+                const handle = this._boundHandles.get(id)
+                if (handle == null) throw new ApiConsistencyError(`Received ${message.kind} message referencing an invalid binding id ${id}`)
+                affectedHandles.push(handle)
             }
 
             if (message.kind == "event") {
-                for (const proxy of affectedProxies) {
-                    proxy["_handleEvent"](message)
+                for (const handle of affectedHandles) {
+                    handle["_handleEvent"](message)
                 }
             } else if (message.kind == "notify") {
-                for (const proxy of affectedProxies) {
-                    proxy["_handleNotification"](message)
+                for (const handle of affectedHandles) {
+                    handle["_handleNotification"](message)
                 }
             }
         })

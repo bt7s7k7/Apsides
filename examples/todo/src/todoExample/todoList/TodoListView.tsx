@@ -10,12 +10,12 @@ import { createRoute, wrapComponentWithId } from "../../vueFoundation/createRout
 import { performAction } from "../../vueFoundation/performAction"
 import { useServiceProvider } from "../../vueFoundation/VueApplication"
 import { TODO_MANAGER_VIEW } from "../todoManager/TodoManagerView"
-import { TodoListProxy } from "./TodoListProxy"
+import { TodoList } from "./TodoList"
 
 export const TodoListView = (defineComponent({
     name: "TodoListView",
     props: {
-        list: { type: TodoListProxy, required: true }
+        list: { type: TodoList, required: true }
     },
     setup(props, ctx) {
         const list = props.list
@@ -51,7 +51,7 @@ export const TODO_LIST_VIEW = createRoute({
     component: wrapComponentWithId(createLoader.withComponentAndId(async (id, guard) => {
         const services = useServiceProvider()
         const client = services.get(RpcClient.kind)
-        const list = await client.getBoundProxy(TodoListProxy, id)
+        const list = await client.getBoundHandle(TodoList, id)
         guard(list)
 
         return () => <TodoListView list={list} />

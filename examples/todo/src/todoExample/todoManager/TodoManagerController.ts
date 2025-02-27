@@ -6,10 +6,10 @@ import { ServiceProvider } from "../../serviceProvider/ServiceProvider"
 import { RpcServer } from "../../structRpc/architecture/RpcServer"
 import { TodoList } from "../todoList/TodoList"
 import { TodoListController } from "../todoList/TodoListController"
-import { TodoManagerApi } from "./TodoManager"
+import { TodoManager } from "./TodoManager"
 
 
-export class TodoManagerController extends TodoManagerApi.makeController() {
+export class TodoManagerController extends TodoManager.api.makeController() {
     protected readonly _lists = new Map<string, TodoListController>()
     protected readonly _services = this.rpcServer.services
     protected readonly _logger = this._services.get(Logger.kind)
@@ -21,7 +21,7 @@ export class TodoManagerController extends TodoManagerApi.makeController() {
     }
 
     static {
-        TodoManagerApi.makeControllerImpl(TodoManagerController, {
+        TodoManager.api.makeControllerImpl(TodoManagerController, {
             async _init() {
                 this._logger.info`Loading TodoManagerController`
             },
