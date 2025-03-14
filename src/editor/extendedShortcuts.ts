@@ -1,12 +1,12 @@
 import CodeMirror, { KeyMap } from "codemirror"
-import { escapeRegex } from "../comTypes/util"
+import { escapeRegex, reverseIterate } from "../comTypes/util"
 
 export function searchInCodeMirrorDocument(cm: CodeMirror.Editor | CodeMirror.Doc, query: string, start: CodeMirror.Position | null = null, end: CodeMirror.Position | null = null) {
     const queryRegex = new RegExp(escapeRegex(query))
     const startLine = (start ?? cm.posFromIndex(0)).line
     const endLine = end?.line ?? cm.lastLine()
 
-    for (let i = startLine; i < endLine; i++) {
+    for (let i = startLine; i <= endLine; i++) {
         let line = cm.getLine(i)
 
         if (i == endLine && end != null) {
@@ -33,7 +33,23 @@ export function searchInCodeMirrorDocument(cm: CodeMirror.Editor | CodeMirror.Do
 
 export const EXTENDED_SHORTCUTS: KeyMap = {
     "Shift-Ctrl-L": "deleteLine",
-    "Ctrl-D": "deleteLine",
+    "Ctrl-D"(cm) {
+        const lines = new Set<number>()
+        for (const selection of cm.listSelections()) {
+            const startLine = selection.from().line
+            const endLine = selection.to().line
+            for (let i = startLine; i <= endLine; i++) {
+                lines.add(i)
+            }
+        }
+
+        const linesArray = [...lines]
+        for (const line of reverseIterate(linesArray)) {
+            const lineContent = cm.getLine(line)
+            const lineEnd = { ch: lineContent.length, line }
+            cm.replaceRange("\n" + lineContent, lineEnd, lineEnd)
+        }
+    },
     "Shift-Tab": "indentLess",
     "Shift-Alt-D"(cm) {
         if (!cm.somethingSelected()) {
