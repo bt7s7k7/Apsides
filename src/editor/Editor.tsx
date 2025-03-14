@@ -4,6 +4,7 @@ import "codemirror/lib/codemirror.css"
 import { PropType, defineComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { eventDecorator } from "../eventDecorator"
 import { MountNode } from "../vue3gui/MountNode"
+import { EXTENDED_SHORTCUTS } from "./extendedShortcuts"
 
 export type EditorHighlightOptions = { offset: number, length: number, lineOffset?: number }
 export const Editor = eventDecorator(defineComponent({
@@ -13,6 +14,7 @@ export const Editor = eventDecorator(defineComponent({
         highlight: { type: Object as PropType<EditorHighlightOptions | null> },
         mode: { type: null },
         config: { type: Object as PropType<EditorConfiguration> },
+        useExtendedShortcuts: { type: Boolean, default: true },
     },
     emits: {
         change: (value: string) => true,
@@ -47,6 +49,7 @@ export const Editor = eventDecorator(defineComponent({
                 indentUnit: 4,
                 ...props.config,
                 extraKeys: {
+                    ...(props.useExtendedShortcuts ? EXTENDED_SHORTCUTS : undefined),
                     ...(props.config?.extraKeys as KeyMap | undefined),
                     "Ctrl-S": () => ctx.emit("change", value),
                 },
