@@ -1,6 +1,6 @@
 import { mdiChevronRight } from "@mdi/js"
 import { EditorConfiguration } from "codemirror"
-import { PropType, defineComponent, ref, shallowRef, watch } from "vue"
+import { PropType, defineComponent, ref, renderSlot, shallowRef, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { eventDecorator } from "../eventDecorator"
 import { Button } from "../vue3gui/Button"
@@ -124,8 +124,9 @@ export const EditorView = eventDecorator(defineComponent({
             <div class="flex column flex-fill">
                 <div class="flex row border-bottom">
                     <div class={["border-right p-1 px-2 flex-fill flex row", props.toolbarClass]} style={{ flexGrow: props.codeRatio }}>
-                        {ctx.slots.default?.()}
-                        <div class="flex-fill"></div>
+                        <div class="flex-fill flex row px-2 gap-2">
+                            {renderSlot(ctx.slots, "default")}
+                        </div>
                         <Button onClick={runCode} variant="success">Run <Icon icon={mdiChevronRight} /> </Button>
                     </div>
                     <div class="p-1 px-2 flex-fill">
