@@ -24,7 +24,7 @@ export function searchInCodeMirrorDocument(cm: CodeMirror.Editor | CodeMirror.Do
                 matchIndex += start.ch
             }
 
-            return { line: i, ch: matchIndex } as CodeMirror.Position
+            return CodeMirror.Pos(i, matchIndex)
         }
     }
 
@@ -65,7 +65,7 @@ export const EXTENDED_SHORTCUTS: KeyMap = {
 
         const searchResult = searchInCodeMirrorDocument(cm, word, current.to())
         if (searchResult) {
-            cm.addSelection(searchResult, { line: searchResult.line, ch: searchResult.ch + word.length })
+            cm.addSelection(searchResult, CodeMirror.Pos(searchResult.line, searchResult.ch + word.length))
         }
     },
 }
