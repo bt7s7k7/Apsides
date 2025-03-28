@@ -4,6 +4,7 @@ import { PropType, defineComponent, ref, renderSlot, shallowRef, watch } from "v
 import { useRoute, useRouter } from "vue-router"
 import { eventDecorator } from "../eventDecorator"
 import { Button } from "../vue3gui/Button"
+import { grid } from "../vue3gui/grid"
 import { Icon } from "../vue3gui/Icon"
 import { Tab, TabbedContainer, Tabs, useTabs } from "../vue3gui/Tabs"
 import { useResizeWatcher } from "../vue3gui/util"
@@ -15,6 +16,8 @@ export const EditorView = eventDecorator(defineComponent({
     props: {
         code: { type: String },
         root: { type: Boolean },
+        vertical: { type: Boolean },
+        noRunButton: { type: Boolean },
         tab: { type: String },
         mode: { type: null },
         localStorageId: { type: String },
@@ -120,60 +123,84 @@ export const EditorView = eventDecorator(defineComponent({
             }
         }
 
-        return () => (
-            <div class="flex column flex-fill">
-                <div class="flex row border-bottom">
-                    <div class={["border-right p-1 px-2 flex-fill flex row", props.toolbarClass]} style={{ flexGrow: props.codeRatio }}>
-                        <div class="flex-fill flex row px-2 gap-2">
-                            {renderSlot(ctx.slots, "default")}
-                        </div>
+        return () => {
+            const toolbar = (
+                <div class={["p-1 px-2 flex row gap-2", props.toolbarClass]}>
+                    <div class="flex-fill flex row gap-2">
+                        {renderSlot(ctx.slots, "default")}
+                    </div>
+                    {!props.noRunButton && (
                         <Button onClick={runCode} variant="success">Run <Icon icon={mdiChevronRight} /> </Button>
-                    </div>
-                    <div class="p-1 px-2 flex-fill">
-                        <Tabs border class="absolute left-0 bottom-0 ml-1" tabs={outputView} />
-                    </div>
+                    )}
                 </div>
-                <div class="flex row flex-fill">
-                    <div class="flex-fill border-right" style={{ flexGrow: props.codeRatio }}>
-                        <Editor
-                            content={props.state.code.value}
-                            onChange={v => props.state.code.value = v}
-                            class="absolute-fill"
-                            highlight={highlighting.value}
-                            mode={props.mode}
-                            config={props.config}
-                        />
-                    </div>
-                    <div class="flex-fill flex column" ref={outputPanel}>
-                        <TabbedContainer class="flex-fill" externalTabs={outputView} onMousemove={handlePositionHighlight} onMouseleave={handlePositionHighlight}>
-                            {props.state.getOutput().map(tab => (
-                                <Tab name={tab.name} key={tab.name} label={tab.label}>
-                                    <div class="absolute-fill overflow-auto p-2">
-                                        {props.state.ready ? (
-                                            typeof tab.content == "string" ? (
-                                                <div class="monospace pre-wrap" innerHTML={tab.content} />
-                                            ) : (
-                                                tab.content()
-                                            )
+            )
+            const tabs = (
+                <div class="p-1 px-2">
+                    <Tabs border class="absolute left-0 bottom-0 ml-1" tabs={outputView} />
+                </div>
+            )
+            const editor = (
+                <div>
+                    <Editor
+                        content={props.state.code.value}
+                        onChange={v => props.state.code.value = v}
+                        class="absolute-fill"
+                        highlight={highlighting.value}
+                        mode={props.mode}
+                        config={props.config}
+                    />
+                </div>
+            )
+            const panel = (
+                <div class="flex column" ref={outputPanel}>
+                    <TabbedContainer class="flex-fill" externalTabs={outputView} onMousemove={handlePositionHighlight} onMouseleave={handlePositionHighlight}>
+                        {props.state.getOutput().map(tab => (
+                            <Tab name={tab.name} key={tab.name} label={tab.label}>
+                                <div class="absolute-fill overflow-auto p-2">
+                                    {props.state.ready ? (
+                                        typeof tab.content == "string" ? (
+                                            <div class="monospace pre-wrap" innerHTML={tab.content} />
                                         ) : (
-                                            <div class="muted p-2">Waiting for compilation...</div>
-                                        )}
-                                    </div>
-                                </Tab>
-                            ))}
+                                            tab.content()
+                                        )
+                                    ) : (
+                                        <div class="muted p-2">Waiting for compilation...</div>
+                                    )}
+                                </div>
+                            </Tab>
+                        ))}
 
-                            {isSmallMode.value && <Tab name="errors" label="Errors">
-                                {errorPanel()}
-                            </Tab>}
-                        </TabbedContainer>
-                        {isSmallMode.value == false && props.state.errors.length > 0 && (
-                            <div class="flex-basis-300 border-top" onMousemove={handlePositionHighlight} onMouseleave={handlePositionHighlight}>
-                                {errorPanel()}
-                            </div>
-                        )}
-                    </div>
+                        {isSmallMode.value && <Tab name="errors" label="Errors">
+                            {errorPanel()}
+                        </Tab>}
+                    </TabbedContainer>
+                    {isSmallMode.value == false && props.state.errors.length > 0 && (
+                        <div class="flex-basis-300 border-top" onMousemove={handlePositionHighlight} onMouseleave={handlePositionHighlight}>
+                            {errorPanel()}
+                        </div>
+                    )}
                 </div>
-            </div>
-        )
+            )
+
+            if (props.vertical) {
+                return (
+                    <div class="flex-fill"
+                        style={grid().rows("auto", `${props.codeRatio ?? 1}fr`, 8, `${props.codeRatio != null ? (1-props.codeRatio) : 1}fr`).$}
+                        v-child-class:head3="border-bottom"
+                    >
+                        {toolbar} {editor} {tabs} {panel}
+                    </div>
+                )
+            }
+            return (
+                <div class="flex-fill"
+                    style={grid().columns(`${props.codeRatio ?? 1}fr`, `${props.codeRatio != null ? (1-props.codeRatio) : 1}fr`).rows("auto", "1fr").$}
+                    v-child-class:odd="border-right"
+                    v-child-class:head2="border-bottom"
+                >
+                    {toolbar} {tabs} {editor} {panel}
+                </div>
+            )
+        }
     },
 }))
