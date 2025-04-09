@@ -33,6 +33,7 @@ export function searchInCodeMirrorDocument(cm: CodeMirror.Editor | CodeMirror.Do
 
 export const EXTENDED_SHORTCUTS: KeyMap = {
     "Shift-Ctrl-L": "deleteLine",
+    "Ctrl-Space": "autocomplete",
     "Ctrl-D"(cm) {
         const lines = new Set<number>()
         for (const selection of cm.listSelections()) {

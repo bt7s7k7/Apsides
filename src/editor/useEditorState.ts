@@ -1,6 +1,7 @@
 import { reactive, shallowReactive, shallowRef } from "vue"
 import { escapeHTML } from "../comTypes/util"
 import { stringifyError } from "../vue3gui/util"
+import { LanguageServiceState } from "./LanguageServiceState"
 
 export abstract class EditorState {
     public readonly code = shallowRef("")
@@ -8,6 +9,8 @@ export abstract class EditorState {
     public readonly errors: string[] = reactive([])
     public ready = false
     public abstract getOutput(): EditorState.OutputTab[]
+
+    public isLanguageService(): this is LanguageServiceState { return false }
 
     public compile(code: string) {
         this.ready = false

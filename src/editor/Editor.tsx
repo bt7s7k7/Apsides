@@ -2,6 +2,8 @@ import CodeMirror, { EditorConfiguration, Editor as Editor_1, KeyMap, TextMarker
 import "codemirror/addon/mode/simple.js"
 import "codemirror/lib/codemirror.css"
 import { PropType, defineComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { GenericParser } from "../comTypes/GenericParser"
+import { isWord } from "../comTypes/util"
 import { eventDecorator } from "../eventDecorator"
 import { MountNode } from "../vue3gui/MountNode"
 import { EXTENDED_SHORTCUTS } from "./extendedShortcuts"
@@ -57,8 +59,26 @@ export const Editor = eventDecorator(defineComponent({
 
             nextTick(() => editor!.refresh())
 
+            let completionTimeout = 0
+
             editor.on("change", () => {
-                value = editor!.getValue()
+                const newValue = editor!.getValue()
+                if (
+                    newValue.length > value.length && editor!.state.selectionActive == null &&
+                    props.config?.hintOptions && !props.config.hintOptions.completeSingle &&
+                    Date.now() - completionTimeout > 50
+                ) {
+                    const wordRange = editor!.findWordAt(editor!.getCursor())
+                    const word = editor!.getRange(wordRange.from(), wordRange.to())
+                    if (word.length > 0 && new GenericParser(word).readWhile(isWord) == word) {
+                        editor!.execCommand("autocomplete")
+                    }
+                }
+                value = newValue
+            })
+
+            editor.on("endCompletion", () => {
+                completionTimeout = Date.now()
             })
 
             editor.on("blur", () => {

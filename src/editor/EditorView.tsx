@@ -1,7 +1,8 @@
 import { mdiChevronRight } from "@mdi/js"
-import { EditorConfiguration } from "codemirror"
-import { PropType, defineComponent, ref, renderSlot, shallowRef, watch } from "vue"
+import CodeMirror, { EditorConfiguration } from "codemirror"
+import { PropType, computed, defineComponent, ref, renderSlot, shallowRef, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
+import { deepObjectApply } from "../comTypes/util"
 import { eventDecorator } from "../eventDecorator"
 import { Button } from "../vue3gui/Button"
 import { grid } from "../vue3gui/grid"
@@ -9,6 +10,7 @@ import { Icon } from "../vue3gui/Icon"
 import { Tab, TabbedContainer, Tabs, useTabs } from "../vue3gui/Tabs"
 import { useResizeWatcher } from "../vue3gui/util"
 import { Editor, EditorHighlightOptions } from "./Editor"
+import { LanguageServiceState } from "./LanguageServiceState"
 import { EditorState } from "./useEditorState"
 
 export const EditorView = eventDecorator(defineComponent({
@@ -123,6 +125,27 @@ export const EditorView = eventDecorator(defineComponent({
             }
         }
 
+        const config = computed(() => {
+            let config: EditorConfiguration =  null!
+            
+            if (props.state.isLanguageService()) {
+                config = deepObjectApply(config, {
+                    hintOptions: {
+                        hint: (cm: CodeMirror.Editor) => (props.state as LanguageServiceState).getHints(cm),
+                        updateOnCursorActivity: true,
+                        completeSingle: false,
+                    },
+                    lint: {
+                        getAnnotations: (content: string, _: any, editor: CodeMirror.Editor) => (props.state as LanguageServiceState).getAnnotations(content, editor),
+                    },
+                })
+            }
+
+            config = deepObjectApply(config, props.config)
+
+            return config
+        })
+
         return () => {
             const toolbar = (
                 <div class={["p-1 px-2 flex row gap-2", props.toolbarClass]}>
@@ -147,7 +170,7 @@ export const EditorView = eventDecorator(defineComponent({
                         class="absolute-fill"
                         highlight={highlighting.value}
                         mode={props.mode}
-                        config={props.config}
+                        config={config.value}
                     />
                 </div>
             )
