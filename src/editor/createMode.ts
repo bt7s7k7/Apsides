@@ -2,22 +2,26 @@ import CodeMirror from "codemirror"
 import { escapeRegex } from "../comTypes/util"
 type Mode = Parameters<typeof CodeMirror.defineSimpleMode>[1]
 
+type _Pattern = string | RegExp
+
 export interface CreateModeOptions {
-    keywords?: string[],
-    keywordsWithModifiers?: Record<string, string[]>
-    constants?: string[]
-    defs?: string[]
-    strings?: { start: string, end: string }[]
-    lineComment?: string | boolean
-    multilineComment?: { start: string, end: string }
-    indent?: string[]
-    dedent?: string[]
+    keywords?: _Pattern[],
+    keywordsWithModifiers?: Record<string, _Pattern[]>
+    constants?: _Pattern[]
+    defs?: _Pattern[]
+    strings?: { start: _Pattern, end: _Pattern }[]
+    lineComment?: _Pattern | boolean
+    multilineComment?: { start: _Pattern, end: _Pattern }
+    indent?: _Pattern[]
+    dedent?: _Pattern[]
     pascalCaseAsType?: boolean
     hexNumbers?: boolean
     binaryNumbers?: boolean
     decimalNumbers?: false | "integers" | "floats" | "scientific"
-    operators?: string[]
+    operators?: _Pattern[]
     functionCalls?: boolean
+    tokensBefore?: CodeMirror.Rule[]
+    tokensAfter?: CodeMirror.Rule[]
 }
 
 // Token types:
@@ -40,11 +44,31 @@ export interface CreateModeOptions {
 //     - `link` => blue
 //     - `error` => red
 
+function _normalizePatternFragment(pattern: string | RegExp) {
+    if (typeof pattern == "string") {
+        return escapeRegex(pattern)
+    }
+
+    return pattern.source
+}
+
+function _normalizePattern(pattern: string | RegExp) {
+    if (typeof pattern == "string") {
+        return new RegExp(escapeRegex(pattern))
+    }
+
+    return pattern
+}
+
 export function createMode(options: CreateModeOptions) {
     const mode: Mode = { start: [] }
     const meta: Record<string, any> = {}
 
     const start = mode.start
+
+    if (options.tokensBefore) {
+        start.push(...options.tokensBefore)
+    }
 
     if (options.lineComment) {
         const lineComment = typeof options.lineComment == "string" ? options.lineComment : "//"
@@ -53,29 +77,29 @@ export function createMode(options: CreateModeOptions) {
     }
 
     if (options.multilineComment) {
-        start.push({ regex: new RegExp(escapeRegex(options.multilineComment.start)), token: "comment", push: "multi_comment" })
+        start.push({ regex: _normalizePattern(options.multilineComment.start), token: "comment", push: "multi_comment" })
         mode.multi_comment = [
-            { regex: new RegExp(escapeRegex(options.multilineComment.start)), token: "comment", push: "multi_comment" },
-            { regex: new RegExp(escapeRegex(options.multilineComment.end)), token: "comment", pop: true },
-            { regex: new RegExp(`.+?(?=${escapeRegex(options.multilineComment.start)}|${escapeRegex(options.multilineComment.end)}|$)`), token: "comment" },
+            { regex: _normalizePattern(options.multilineComment.start), token: "comment", push: "multi_comment" },
+            { regex: _normalizePattern(options.multilineComment.end), token: "comment", pop: true },
+            { regex: new RegExp(`.+?(?=${_normalizePatternFragment(options.multilineComment.start)}|${_normalizePatternFragment(options.multilineComment.end)}|$)`), token: "comment" },
         ]
     }
 
     if (options.keywords) {
-        start.push({ regex: new RegExp(`\\b(?:${options.keywords.map(escapeRegex).join("|")})\\b`), token: "keyword" })
+        start.push({ regex: new RegExp(`\\b(?:${options.keywords.map(_normalizePatternFragment).join("|")})\\b`), token: "keyword" })
     }
 
     if (options.constants) {
-        start.push({ regex: new RegExp(`\\b(?:${options.constants.map(escapeRegex).join("|")})\\b`), token: "variable-2" })
+        start.push({ regex: new RegExp(`\\b(?:${options.constants.map(_normalizePatternFragment).join("|")})\\b`), token: "variable-2" })
     }
 
     if (options.defs) {
-        start.push({ regex: new RegExp(`\\b(?:${options.defs.map(escapeRegex).join("|")})\\b`), token: "def" })
+        start.push({ regex: new RegExp(`\\b(?:${options.defs.map(_normalizePatternFragment).join("|")})\\b`), token: "def" })
     }
 
     if (options.keywordsWithModifiers) {
         for (const [keyword, modifiers] of Object.entries(options.keywordsWithModifiers)) {
-            start.push({ regex: new RegExp(`((?:(?:${modifiers.map(escapeRegex).join("|")})\\s+)*)(${escapeRegex(keyword)})`), token: ["atom", "keyword"] })
+            start.push({ regex: new RegExp(`((?:(?:${modifiers.map(_normalizePatternFragment).join("|")})\\s+)*)(${_normalizePatternFragment(keyword)})`), token: ["atom", "keyword"] })
         }
     }
 
@@ -84,11 +108,11 @@ export function createMode(options: CreateModeOptions) {
         for (const string of options.strings) {
             number++
             const id = "string_" + number
-            start.push({ regex: new RegExp(escapeRegex(string.start)), token: "string", push: id })
+            start.push({ regex: new RegExp(_normalizePatternFragment(string.start)), token: "string", push: id })
             mode[id] = [
                 { regex: new RegExp(`\\\\.`), token: "string" },
-                { regex: new RegExp(escapeRegex(string.end)), token: "string", pop: true },
-                { regex: new RegExp(`[^\\\\${escapeRegex(string.end)}]+`), token: "string" },
+                { regex: _normalizePattern(string.end), token: "string", pop: true },
+                { regex: new RegExp(`[^\\\\${_normalizePatternFragment(string.end)}]+`), token: "string" },
             ]
         }
     }
@@ -118,6 +142,10 @@ export function createMode(options: CreateModeOptions) {
     }
 
     start.push({ regex: new RegExp("[a-zA-Z_]\\w*"), token: "variable" })
+
+    if (options.tokensAfter) {
+        start.push(...options.tokensAfter)
+    }
 
     // @ts-ignore
     mode.meta = meta
