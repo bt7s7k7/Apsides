@@ -20,6 +20,7 @@ export const Editor = eventDecorator(defineComponent({
     },
     emits: {
         change: (value: string) => true,
+        mounted: (editor: Editor_1) => true,
     },
     setup(props, ctx) {
         const editorHost = ref<HTMLElement>()
@@ -84,6 +85,8 @@ export const Editor = eventDecorator(defineComponent({
             editor.on("blur", () => {
                 ctx.emit("change", value)
             })
+
+            ctx.emit("mounted", editor)
         })
 
         onBeforeUnmount(() => {

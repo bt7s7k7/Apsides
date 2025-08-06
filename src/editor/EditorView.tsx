@@ -1,6 +1,6 @@
 import { mdiChevronRight } from "@mdi/js"
-import CodeMirror, { EditorConfiguration } from "codemirror"
-import { PropType, computed, defineComponent, ref, renderSlot, shallowRef, watch } from "vue"
+import CodeMirror, { Editor as Editor_1, EditorConfiguration } from "codemirror"
+import { computed, defineComponent, PropType, ref, renderSlot, shallowRef, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { deepObjectApply } from "../comTypes/util"
 import { eventDecorator } from "../eventDecorator"
@@ -30,6 +30,7 @@ export const EditorView = eventDecorator(defineComponent({
     },
     emits: {
         compile: (state: EditorState, code: string) => true,
+        mounted: (editor: Editor_1) => true,
     },
     setup(props, ctx) {
         const route = useRoute()
@@ -167,6 +168,7 @@ export const EditorView = eventDecorator(defineComponent({
                     <Editor
                         content={props.state.code.value}
                         onChange={v => props.state.code.value = v}
+                        onMounted={(editor: Editor_1) => ctx.emit("mounted", editor)}
                         class="absolute-fill"
                         highlight={highlighting.value}
                         mode={props.mode}
