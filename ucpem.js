@@ -159,14 +159,11 @@ project.script("build-clean", async () => {
 })
 
 project.script("builder", async (args) => {
-    const { ProjectBuilder } = require("./src/projectBuilder/ProjectBuilder")
-
-    const mode = args[0] == "build" ? "build" : args[0] == "dev" ? "dev" : args[0] == "watch" ? "watch" : args[0] == "vite" ? "vite" : args[0] == "run" ? "run" : null
-    if (mode == null) throw new Error("Invalid mode, expected build, watch or dev")
+    const { executeProjectBuilder } = require("./src/projectBuilder/executeProjectBuilder")
 
     const root = constants.installPath
-    await new ProjectBuilder(root).build(mode)
-}, { desc: "Builds and or executes Node.js project :: Arguments: <build|watch|dev|vite|run>", argc: 1 })
+    await executeProjectBuilder(root, args)
+}, { desc: "Builds and or executes Node.js project :: Arguments: <build|watch|dev|vite|run>", argc: NaN })
 
 project.script("publish-all", async () => {
     const packages = Object.values(getPackageBuilder().getDevResolutionObject())
