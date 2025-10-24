@@ -33,8 +33,8 @@ export const EditorView = eventDecorator(defineComponent({
         mounted: (editor: Editor_1) => true,
     },
     setup(props, ctx) {
-        const route = useRoute()
-        const router = useRouter()
+        const route = import.meta.env.VITE_NO_ROUTER ? null as never : useRoute()
+        const router = import.meta.env.VITE_NO_ROUTER ? null as never : useRouter()
 
         if (props.localStorageId && !props.root) {
             // eslint-disable-next-line no-console
@@ -58,7 +58,7 @@ export const EditorView = eventDecorator(defineComponent({
         })
 
         if (props.root) {
-            if (route.query.code) {
+            if (!import.meta.env.VITE_NO_ROUTER && route.query.code) {
                 const queryCode = route.query.code as string
                 props.state.code.value = queryCode
 
