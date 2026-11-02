@@ -27,8 +27,8 @@ export class ProjectBuilder {
         const options: BuildOptions = {
             bundle: true,
             format: "esm",
-            entryPoints: [this.entryPoint],
-            outfile: this.outFile,
+            entryPoints: [resolve(this.root, this.entryPoint)],
+            outfile: resolve(this.root, this.outFile),
             sourcemap: true,
             logLevel: isDev ? "silent" : "info",
             platform: "node",
@@ -62,7 +62,7 @@ export class ProjectBuilder {
     }
 
     public runBuild() {
-        const runArguments = this.runArguments.map(v => v == "$OUTFILE" ? this.outFile : v)
+        const runArguments = this.runArguments.map(v => v == "$OUTFILE" ? resolve(this.root, this.outFile) : v)
         return spawn(process.argv[0], runArguments, { stdio: "inherit" })
     }
 
@@ -144,6 +144,7 @@ export class ProjectBuilder {
         const tsc = spawn("yarn tsc --noEmit --watch --incremental --preserveWatchOutput --pretty", {
             stdio: "pipe",
             shell: true,
+            cwd: this.root,
         })
 
         let first = true
