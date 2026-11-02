@@ -5,10 +5,14 @@ import { ProjectBuilder } from "./ProjectBuilder"
 
 export async function executeProjectBuilder(root: string, args: string[]) {
     const argument = args.shift()!
-    const mode = argument == "build" ? "build" : argument == "dev" ? "dev" : argument == "watch" ? "watch" : argument == "vite" ? "vite" : argument == "run" ? "run" : null
-    if (mode == null) throw new Error("Invalid mode, expected: build, dev, watch, run, vite")
+    const mode = argument == "build" ? "build" : argument == "dev" ? "dev" : argument == "watch" ? "watch" : argument == "vite" ? "vite" : argument == "run" ? "run" : argument == "cli" ? "cli" : null
+    if (mode == null) throw new Error("Invalid mode, expected: build, dev, watch, run, vite, cli")
 
     const builder = new ProjectBuilder(root)
+
+    if (mode == "cli") {
+        builder.runArguments.splice(builder.runArguments.indexOf("--inspect"), 1)
+    }
 
     for (const file of ["builder.js", "builder.cjs"]) {
         const configFile = join(root, file)
@@ -20,5 +24,5 @@ export async function executeProjectBuilder(root: string, args: string[]) {
 
     builder.runArguments.push(...args)
 
-    await builder.build(mode)
+    await builder.build(mode == "cli" ? "run" : mode)
 }
