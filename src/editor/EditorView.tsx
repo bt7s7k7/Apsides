@@ -173,6 +173,7 @@ export const EditorView = eventDecorator(defineComponent({
                         highlight={highlighting.value}
                         mode={props.mode}
                         config={config.value}
+                        useExtendedShortcuts
                     />
                 </div>
             )
